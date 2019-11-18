@@ -1,3 +1,5 @@
+kigs_project(TimerProject)
+
 add_library(Timer STATIC "")
 
 target_link_libraries(Timer PUBLIC BaseFramework Core)

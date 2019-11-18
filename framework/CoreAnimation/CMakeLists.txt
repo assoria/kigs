@@ -1,3 +1,5 @@
+kigs_project(CoreAnimationProject)
+
 add_library(CoreAnimation STATIC "")
 
 target_link_libraries(CoreAnimation PUBLIC BaseFramework Core SceneGraph Renderer TinyImage Input Timer FileManager XML)

@@ -1,3 +1,5 @@
+kigs_project(GenericAnimationProject)
+
 add_library(GenericAnimation STATIC "")
 
 target_link_libraries(GenericAnimation PUBLIC SceneGraph Renderer)

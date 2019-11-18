@@ -1,3 +1,5 @@
+kigs_project(InputProject)
+
 add_library(Input STATIC "")
 
 target_link_libraries(Input PUBLIC GUI)

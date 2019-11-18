@@ -1,3 +1,5 @@
+kigs_project(FileManagerProject)
+
 add_library(FileManager STATIC "")
 
 target_link_libraries(FileManager PUBLIC BaseFramework Core)

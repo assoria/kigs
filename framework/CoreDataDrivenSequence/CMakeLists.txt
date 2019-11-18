@@ -1,3 +1,5 @@
+kigs_project(CoreDataDrivenSequenceProject)
+
 add_library(CoreDataDrivenSequence STATIC "")
 
 target_link_libraries(CoreDataDrivenSequence PUBLIC Core)

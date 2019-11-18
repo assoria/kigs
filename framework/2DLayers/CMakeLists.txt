@@ -1,3 +1,5 @@
+kigs_project(2DLayersProject)
+
 add_library(2DLayers STATIC "")
 
 target_link_libraries(2DLayers PUBLIC TinyImage Input Renderer SceneGraph)

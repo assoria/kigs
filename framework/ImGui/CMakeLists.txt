@@ -1,3 +1,5 @@
+kigs_project(ImGuiProject)
+
 add_library(ImGui STATIC "")
 
 target_link_libraries(ImGui PUBLIC 2DLayers SceneGraph Renderer Input)

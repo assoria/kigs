@@ -1,3 +1,5 @@
+kigs_project(CoreProject)
+
 add_library(Core STATIC "")
 
 target_link_libraries(Core PUBLIC BaseFramework XML FileManager Timer)

@@ -55,6 +55,7 @@ function(add_executable)
 	_add_executable(${ARGV} "")
 endfunction()
 
+
 function(set_kigsPlatform)
 	set(KIGS_PLATFORM Windows PARENT_SCOPE)
 	if(WIN32)
@@ -69,13 +70,12 @@ function(set_kigsPlatform)
 		else()
 			set(KIGS_PLATFORM Windows PARENT_SCOPE)
 		endif()
-
+	elseif(MACOS)
+		set(KIGS_PLATFORM MacOS PARENT_SCOPE)
 	elseif(APPLE) #TODO : ios / osX
 		set(KIGS_PLATFORM iOS PARENT_SCOPE)
-	
 	elseif(JAVASCRIPT)
 		set(KIGS_PLATFORM Javascript PARENT_SCOPE)
-
 	elseif(UNIX) #TODO
 		set(KIGS_PLATFORM Linux PARENT_SCOPE)
 	endif()
@@ -195,6 +195,9 @@ if(WIN32 OR KIGS_ANDROID)
 		target_compile_options(Base INTERFACE $<$<CONFIG:StaticDebug>:/ZI>)
 		target_compile_options(Base INTERFACE -bigobj)
 	endif()
+elseif(MACOS)
+	set(KIGS_PLATFORM MacOS)
+	set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../MacOSLibraries/$<CONFIG>)
 elseif(APPLE) #TODO : ios / osX
 	set(KIGS_PLATFORM iOS)
 	set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../iOSLibraries)
@@ -270,6 +273,13 @@ macro(add_kigs_module MODULE_NAME)
 		SET_TARGET_PROPERTIES(${MODULE_NAME} PROPERTIES  FOLDER "framework" )
 	endif()
 endmacro()
+
+macro(kigs_project PROJECT_NAME)
+	if(NOT MSVC)
+		project(${PROJECT_NAME})
+	endif()
+endmacro()
+
 
 function(GRAB_BASE_SOURCES TARGET_NAME EXCLUDED_FILES)
 
@@ -379,6 +389,10 @@ elseif(${KIGS_PLATFORM} STREQUAL "Javascript")
 	target_sources(BaseExecutable 
 		INTERFACE 
 			"${KIGS_PRIVATE_FRAMEWORK}/PlatformsModules/${KIGS_PLATFORM}/Platform/Main/mainJavascript.cpp")
+elseif(${KIGS_PLATFORM} STREQUAL "MacOS")
+	target_sources(BaseExecutable 
+		INTERFACE 
+			"${KIGS_FRAMEWORK}/PlatformsModules/${KIGS_PLATFORM}/Platform/Main/mainMacOS.cpp")
 endif()
 
 if(${KIGS_PLATFORM} STREQUAL "Windows")

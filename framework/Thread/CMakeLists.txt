@@ -1,3 +1,5 @@
+kigs_project(ThreadProject)
+
 add_library(Thread STATIC "")
 
 target_link_libraries(Thread PUBLIC BaseFramework Core)

@@ -1,3 +1,5 @@
+kigs_project(LuaKigsBindProject)
+
 add_library(LuaKigsBind STATIC "")
 
 target_link_libraries(LuaKigsBind PUBLIC CoreAnimation GUI 2DLayers Input lua)

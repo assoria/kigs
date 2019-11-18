@@ -1,3 +1,5 @@
+kigs_project(XMLProject)
+
 add_library(XML STATIC "")
 
 target_link_libraries(XML PUBLIC BaseFramework Core)

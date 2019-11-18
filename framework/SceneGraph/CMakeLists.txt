@@ -1,3 +1,5 @@
+kigs_project(SceneGraphProject)
+
 add_library(SceneGraph STATIC "")
 
 target_link_libraries(SceneGraph PUBLIC Input Renderer concurrentqueue)

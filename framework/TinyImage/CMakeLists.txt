@@ -1,3 +1,5 @@
+kigs_project(TinyImageProject)
+
 add_library(TinyImage STATIC "")
 
 target_link_libraries(TinyImage PUBLIC Core)

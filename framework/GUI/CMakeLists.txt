@@ -1,3 +1,5 @@
+kigs_project(GUIProject)
+
 add_library(GUI STATIC "")
 
 target_link_libraries(GUI PUBLIC SceneGraph Renderer Input)

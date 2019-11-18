@@ -1,3 +1,5 @@
+kigs_project(CollisionProject)
+
 add_library(Collision STATIC "")
 
 target_link_libraries(Collision PUBLIC SceneGraph Renderer concurrentqueue)

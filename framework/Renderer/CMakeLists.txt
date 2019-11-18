@@ -1,3 +1,5 @@
+kigs_project(RendererProject)
+
 add_library(Renderer STATIC "")
 
 target_link_libraries(Renderer PUBLIC SceneGraph Input GUI TinyImage)
