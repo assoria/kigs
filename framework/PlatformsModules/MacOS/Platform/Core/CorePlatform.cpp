@@ -11,48 +11,52 @@
 #include "../../../../HTTPRequest/Headers/HTTPConnect.h"
 #endif
 
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 // check if file exist and if it's a file or directory
 void MacOSCheckState(FileHandle * hndl)
 {
-	/*  TODO
-  std::wstring wfilename = to_wchar(hndl->myFullFileName);
-	int attr = GetFileAttributesW(wfilename.c_str());
-	if (attr == -1)
-	{
-		// file doesn't exist
-		hndl->resetStatus();
-		return;
-	}
-	hndl->myStatus |= FileHandle::Exist;
-	if ((attr&FILE_ATTRIBUTE_DIRECTORY) != 0)
-		hndl->myStatus |= FileHandle::IsDIr;
-*/
+    struct stat filestat;
+    
+    if(stat(hndl->myFullFileName.c_str(),&filestat)<0)
+    {
+        // file doesn't exist
+        hndl->resetStatus();
+        return;
+    }
+    
+    hndl->myStatus |= FileHandle::Exist;
+    if (S_ISDIR(filestat.st_mode))
+        hndl->myStatus |= FileHandle::IsDIr;
 
 }
 
 bool MacOSCreateFolderTree(FileHandle* hndl)
 {
-	/*  TODO
+	
   	if ((hndl->myStatus&FileHandle::Exist) == 0)
 	{
 		SmartPointer<FileHandle> parent = FilePathManager::CreateFileHandle(FilePathManager::GetParentDirectory(hndl->myFullFileName));
 		if (parent->myFullFileName != "")
 		{
-			Win32CheckState(parent.get());
-			Win32CreateFolderTree(parent.get());
-			std::wstring wfilename = to_wchar(parent->myFullFileName);
-			return CreateDirectoryW(wfilename.c_str(), NULL);
+			MacOSCheckState(parent.get());
+			MacOSCreateFolderTree(parent.get());
+            
+            if(mkdir(parent->myFullFileName.c_str(),755) != 0)
+                return false;
+            
 		}
 	}
 
 	return true;
-*/
 }
 
 SmartPointer<FileHandle>	MacOSFindFullName(const kstl::string&	filename)
 {
-	/*  TODO
+	//  TODO
   	if (filename[0] != '#')
 	{
 		return 0;
@@ -73,23 +77,31 @@ SmartPointer<FileHandle>	MacOSFindFullName(const kstl::string&	filename)
 	case FilePathManager::APPLICATION_STORAGE:
 	case FilePathManager::DB_STORAGE:				// Database is in application storage for us on win32
 	{
-		char resultchar[256];
+/*		char resultchar[256];
 		if (SHGetFolderPathA(NULL, CSIDL_APPDATA, NULL, 0, resultchar) == S_OK)
 		{
 			fullFileName += resultchar;
 			fullFileName += "\\";
-		}
+		}*/
+        // TODO
+        return 0;
+        break;
 	}
 	break;
 	case FilePathManager::DOCUMENT_FOLDER:
 	{
+        /*
 		char resultchar[256];
 		if (SHGetFolderPathA(NULL, CSIDL_PERSONAL, NULL, 0, resultchar) == S_OK)
 		{
 			fullFileName += resultchar;
 			fullFileName += "\\";
-		}
-	}
+		}*/
+        //TODO
+        return 0;
+        break;
+        
+    }
 	break;
 	case FilePathManager::DISTANT_FOLDER1:
 	case FilePathManager::DISTANT_FOLDER2:
@@ -114,14 +126,14 @@ SmartPointer<FileHandle>	MacOSFindFullName(const kstl::string&	filename)
 
 	result->myDeviceID = id;
 	result->myFullFileName = fullFileName;
-	Win32CheckState(result.get());
+	MacOSCheckState(result.get());
 	return result;
-*/
+
 }
 
 bool MacOSfopen(FileHandle* handle, const char * mode)
 {
-	/*  TODO
+	
   	unsigned int flagmode = FileHandle::OpeningFlags(mode);
 
 	if (handle->myStatus&FileHandle::Open) // already opened ? return true
@@ -140,17 +152,11 @@ bool MacOSfopen(FileHandle* handle, const char * mode)
 	// create parent if in write mode
 	if (flagmode & FileHandle::Write)
 	{
-		Win32CreateFolderTree(handle);
+		MacOSCreateFolderTree(handle);
 	}
 
-	std::wstring wfilename = to_wchar(handle->myFullFileName);
-	wchar_t wmode[64] = {};
-	for (int i=0; i<strlen(mode); ++i)
-	{
-		wmode[i] = mode[i];
-	}
 
-	handle->myFile = _wfopen(wfilename.c_str(), wmode);
+	handle->myFile = fopen(handle->myFullFileName.c_str(), mode);
 
 	if (handle->myFile)
 	{
@@ -161,7 +167,7 @@ bool MacOSfopen(FileHandle* handle, const char * mode)
 	}
 	handle->resetStatus();
 	return false;
-*/
+
 }
 
 long int MacOSfread(void * ptr, long size, long count, FileHandle* handle)
@@ -196,8 +202,8 @@ int MacOSfclose(FileHandle* handle)
 
 std::string to_utf8(const wchar_t* buffer, int len)
 {
-    /*
-	int nChars = ::WideCharToMultiByte(
+    
+	/*int nChars = ::WideCharToMultiByte(
 		CP_UTF8,
 		0,
 		buffer,
@@ -207,10 +213,11 @@ std::string to_utf8(const wchar_t* buffer, int len)
 		NULL,
 		NULL);
 	if (nChars == 0) return "";
-
+*/
+    // TODO
 	std::string newbuffer;
-	newbuffer.resize(nChars);
-	::WideCharToMultiByte(
+	//newbuffer.resize(nChars);
+/*	::WideCharToMultiByte(
 		CP_UTF8,
 		0,
 		buffer,
@@ -219,8 +226,8 @@ std::string to_utf8(const wchar_t* buffer, int len)
 		nChars,
 		NULL,
 		NULL);
-
-	return newbuffer;*/
+*/
+	return newbuffer;
 }
 
 std::string to_utf8(const std::wstring& str)
@@ -239,9 +246,10 @@ std::wstring to_wchar(const char* buffer, int len)
 		0);
 
 	if (nChars == 0) return L"";
-
+*/
+    // TODO
 	std::wstring newbuffer;
-	newbuffer.resize(nChars);
+/*	newbuffer.resize(nChars);
 	::MultiByteToWideChar(
 		CP_UTF8,
 		0,
@@ -249,8 +257,8 @@ std::wstring to_wchar(const char* buffer, int len)
 		len,
 		const_cast<wchar_t*>(newbuffer.c_str()),
 		nChars);
-
-	return newbuffer;*/
+*/
+	return newbuffer;
 }
 
 std::wstring to_wchar(const std::string& str)
