@@ -1,3 +1,4 @@
+kigs_project(pngProject)
 add_library(png STATIC "")
 target_include_directories(png PUBLIC "")
 target_link_libraries(png PUBLIC zlib Base)

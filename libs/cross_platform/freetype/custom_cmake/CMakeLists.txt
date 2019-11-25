@@ -1,3 +1,5 @@
+kigs_project(freetypeProject)
+
 add_library(freetype STATIC "")
 
 target_sources(freetype 

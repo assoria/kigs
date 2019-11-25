@@ -1,3 +1,4 @@
+kigs_project(luaProject)
 add_library(lua STATIC "")
 target_include_directories(lua PUBLIC "src")
 target_sources(lua PRIVATE "src/luaOneFile.cpp")

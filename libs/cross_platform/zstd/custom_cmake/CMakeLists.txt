@@ -1,4 +1,4 @@
-
+kigs_project(zstdlibProject)
 add_library(zstdlib INTERFACE)
 
 target_include_directories(zstdlib INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/../lib/")

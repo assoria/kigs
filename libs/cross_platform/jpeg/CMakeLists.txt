@@ -1,3 +1,4 @@
+kigs_project(jpegProject)
 add_library(jpeg STATIC "")
 target_include_directories(jpeg PUBLIC "")
 target_compile_definitions(jpeg PRIVATE _CRT_SECURE_NO_WARNINGS)

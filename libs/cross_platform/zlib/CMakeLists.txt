@@ -1,3 +1,4 @@
+kigs_project(zlibProject)
 add_library(zlib STATIC "")
 target_include_directories(zlib PUBLIC "")
 target_compile_definitions(zlib PRIVATE _CRT_SECURE_NO_WARNINGS)
