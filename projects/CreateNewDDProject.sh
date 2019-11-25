@@ -17,7 +17,7 @@ find ./$projectName -type f -name '*DDProjectName*' | while read FILE ; do
 done 
 
 #now replace DDProjectName by ${projectName} in files
-find ./$projectName -type f ! -name '*.png' ! -name '*.ttf' | while read FILE ; do
+find ./$projectName -type f ! -name '*.png' ! -name '*.ttf' ! -name '*.pfx' | while read FILE ; do
 if [[ $OSTYPE == darwin* ]]; then 
 	sed -i "" 's/DDProjectName/'${projectName}'/g' "${FILE}"
 else
