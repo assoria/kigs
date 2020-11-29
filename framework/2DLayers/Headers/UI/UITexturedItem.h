@@ -2,6 +2,7 @@
 #define _UITexturedItem_H_
 
 #include "UI/UIDrawableItem.h"
+#include "UI/UIShapeDelegate.h"
 #include "UIVerticesInfo.h"
 #include "SmartPointer.h"
 #include "Texture.h"
@@ -37,7 +38,14 @@ public:
 	bool	addItem(const CMSP& item, ItemPosition pos = Last DECLARE_DEFAULT_LINK_NAME) override;
 	bool	removeItem(const CMSP& item DECLARE_DEFAULT_LINK_NAME) override;
 
-
+	const v2f& getUVMin() const
+	{
+		return mUVMin;
+	}
+	const v2f& getUVMax() const
+	{
+		return mUVMax;
+	}
 protected:
 	virtual ~UITexturedItem();
 	void NotifyUpdate(const unsigned int labelid) override;

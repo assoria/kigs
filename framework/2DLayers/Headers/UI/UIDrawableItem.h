@@ -7,6 +7,7 @@
 
 class Texture;
 class UIDrawableItem;
+class UIShapeDelegate;
 
 #define		UserFlagUseColorArray	(8)
 
@@ -35,10 +36,17 @@ public:
 
 	virtual void SetWhiteColor(UIVerticesInfo * aQI);
 
+	// manage Shape directly added 
+	bool	addItem(const CMSP& item, ItemPosition pos = Last DECLARE_DEFAULT_LINK_NAME) override;
+	bool	removeItem(const CMSP& item DECLARE_DEFAULT_LINK_NAME) override;
+
 protected:
 	UIVerticesInfo mVI;
 
 	maVect2DI mSliced = BASE_ATTRIBUTE(Sliced, 0, 0);
+
+	// override SetVertexArray SetColor and SetTexUV to draw UI as a Shape
+	UIShapeDelegate* mShape = nullptr;
 };
 
 

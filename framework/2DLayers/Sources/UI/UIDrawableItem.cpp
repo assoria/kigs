@@ -30,6 +30,10 @@ void UIDrawableItem::SetVertexArray(UIVerticesInfo * aQI)
 	// TODO NONO update only when changed
 	aQI->Flag |= UIVerticesInfo_Vertex;
 
+	if (mShape)
+	{
+		return mShape->SetVertexArray(this, aQI);
+	}
 	auto slice_size = (v2f)mSliced;
 	if (slice_size == v2f(0, 0))
 	{
@@ -206,4 +210,26 @@ void UIDrawableItem::ProtectedDraw(TravState* state)
 	if ((lQI->Flag & UIVerticesInfo_UseModelMatrix) != 0)
 		renderer->PopMatrix(MATRIX_MODE_MODEL);
 
+}
+
+bool UIDrawableItem::addItem(const CMSP& item, ItemPosition pos DECLARE_LINK_NAME)
+{
+	if (item->isSubType(UIShapeDelegate::mClassID))
+	{
+		mShape = (UIShapeDelegate*)item.get();
+	}
+
+	return UIItem::addItem(item, pos PASS_LINK_NAME(linkName));
+}
+
+bool UIDrawableItem::removeItem(const CMSP& item DECLARE_LINK_NAME)
+{
+	if (item->isSubType(UIShapeDelegate::mClassID))
+	{
+		if (item == mShape)
+		{
+			mShape = nullptr;
+		}
+	}
+	return UIItem::removeItem(item PASS_LINK_NAME(linkName));
 }

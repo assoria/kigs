@@ -19,8 +19,21 @@ IMPLEMENT_CONSTRUCTOR(UITexturedItem)
 
 void UITexturedItem::SetTexUV(UIVerticesInfo * aQI)
 {
+	
 	if (!mTexturePointer.isNil())
 	{
+		aQI->Flag |= UIVerticesInfo_Texture;
+
+		bool is_bgr = false;
+		if (mTexturePointer->getValue("IsBGR", is_bgr) && is_bgr)
+		{
+			aQI->Flag |= UIVerticesInfo_BGRTexture;
+		}
+
+		if (mShape)
+		{
+			return mShape->SetTexUV(this, aQI);
+		}
 		kfloat ratioX, ratioY, sx, sy;
 		unsigned int p2sx, p2sy;
 		mTexturePointer->GetSize(sx, sy);
@@ -39,14 +52,6 @@ void UITexturedItem::SetTexUV(UIVerticesInfo * aQI)
 		kfloat dy = 0.5f / ((float)p2sy);
 
 		VInfo2D::Data* buf = reinterpret_cast<VInfo2D::Data*>(aQI->Buffer());
-
-		aQI->Flag |= UIVerticesInfo_Texture;
-
-		bool is_bgr = false;
-		if (mTexturePointer->getValue("IsBGR", is_bgr) && is_bgr)
-		{
-			aQI->Flag |= UIVerticesInfo_BGRTexture;
-		}
 
 		auto slice_size = (v2f)mSliced;
 		if (slice_size == v2f(0, 0))
