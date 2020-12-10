@@ -1,0 +1,8 @@
+#include "Box2DBody.h"
+
+IMPLEMENT_CLASS_INFO(Box2DBody)
+
+IMPLEMENT_CONSTRUCTOR(Box2DBody)
+{
+
+}
