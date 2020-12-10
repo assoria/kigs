@@ -22,6 +22,10 @@ class Box2DBody : public CoreModifiable
 public:
 	DECLARE_CLASS_INFO(Box2DBody, CoreModifiable, Box2DBind)
 	DECLARE_CONSTRUCTOR(Box2DBody);
+
 protected:
 
+	virtual ~Box2DBody();
+
+	b2Body* mBody;
 };

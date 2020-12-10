@@ -30,6 +30,10 @@ public:
 	//! module close
     void Close() override;
 	
+	b2World* GetWorld()
+	{
+		return &mWorld;
+	}
 	
 protected:
 
