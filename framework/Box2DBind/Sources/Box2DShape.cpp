@@ -14,3 +14,14 @@ Box2DShape::~Box2DShape()
 
 	mShape = nullptr;
 }
+
+void Box2DShape::InitModifiable()
+{
+	if (_isInit) // already init ? just return
+	{
+		return;
+	}
+
+	// TODO
+}
+

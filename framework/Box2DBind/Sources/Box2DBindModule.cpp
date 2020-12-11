@@ -1,5 +1,6 @@
 #include "Box2DBindModule.h"
 #include "Box2DBody.h"
+#include "Box2DShape.h"
 
 #include "box2d/b2_api.h"
 
@@ -20,7 +21,7 @@ void Box2DBindModule::Init(KigsCore* core, const kstl::vector<CoreModifiableAttr
     mGravity.changeNotificationLevel(Owner);
 
 	DECLARE_FULL_CLASS_INFO(core, Box2DBody, Box2DBody, Box2DBind);
-
+	DECLARE_FULL_CLASS_INFO(core, Box2DShape, Box2DShape, Box2DBind);
 }
 
 //! module close

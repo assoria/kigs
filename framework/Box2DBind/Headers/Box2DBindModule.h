@@ -49,6 +49,11 @@ protected:
 	b2World		mWorld;
 }; 
 
+inline b2Vec2 tob2Vec2(const v2f& v)
+{
+	b2Vec2 result(v.x, v.y);
+	return result;
+}
 
 
 #endif //_BOX2DBINDMODULE_H_
