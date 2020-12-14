@@ -1,5 +1,7 @@
 if(TARGET box2d)
 
+	message(STATUS "box2d found")
+
 	add_library(Box2DBind STATIC "")
 
 	target_link_libraries(Box2DBind PUBLIC 2DLayers box2d)

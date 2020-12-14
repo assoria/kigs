@@ -18,6 +18,9 @@ add_kigs_module(Thread)
 add_kigs_module(Timer)
 add_kigs_module(TinyImage)
 add_kigs_module(XML)
-add_kigs_module(Box2DBind)
+
+if(TARGET box2d)
+	add_kigs_module(Box2DBind)
+endif()
 
 add_subdirectory(StandAloneUtilityClasses)
