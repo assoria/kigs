@@ -39,14 +39,14 @@ protected:
 
 	void NotifyUpdate(const unsigned int labelID) override;
 	
-	void Update(const Timer& timer, void* addParam) override
-	{
-		// nothing to do
-	}
+	void Update(const Timer& timer, void* addParam) override;
 
 	maVect2DF	mGravity = BASE_ATTRIBUTE(Gravity, 0.0f, -10.0f);
 
 	b2World		mWorld;
+
+	double		mLastUpdateTime=0.0;
+	double		mMaxDT=1.0/60.0;
 }; 
 
 inline b2Vec2 tob2Vec2(const v2f& v)

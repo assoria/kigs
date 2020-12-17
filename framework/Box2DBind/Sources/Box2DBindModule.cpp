@@ -1,6 +1,7 @@
 #include "Box2DBindModule.h"
 #include "Box2DBody.h"
 #include "Box2DShape.h"
+#include "Timer.h"
 
 #include "box2d/b2_api.h"
 
@@ -39,5 +40,17 @@ void Box2DBindModule::NotifyUpdate(const unsigned int labelID)
 		mWorld.SetGravity(b2Vec2(g.x, g.y));
 	}
 	ModuleBase::NotifyUpdate(labelID);
+}
+
+void Box2DBindModule::Update(const Timer& timer, void* addParam)
+{
+	double t = timer.GetTime();
+	double dt = t - mLastUpdateTime;
+	mLastUpdateTime = t;
+	if (dt > mMaxDT)
+	{
+		dt = mMaxDT;
+	}
+	mWorld.Step(dt, 8, 3);
 }
 
