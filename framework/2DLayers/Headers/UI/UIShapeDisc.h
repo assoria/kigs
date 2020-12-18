@@ -2,7 +2,7 @@
 #define _UIShapeDisc_H_
 
 #include "UIShapeDelegate.h"
-
+#define EBBH_EDITION
 
 // ****************************************
 // * UIShapeDisc class
@@ -36,8 +36,12 @@ protected:
 	{
 
 	}
-	
+#ifdef EBBH_EDITION
+	void InitModifiable() override;
+	int		removedSlice = -1;
+#endif
 	maInt	mSliceCount=BASE_ATTRIBUTE(SliceCount,16);
+
 
 };
 

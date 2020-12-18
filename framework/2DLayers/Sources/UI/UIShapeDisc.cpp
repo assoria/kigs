@@ -6,6 +6,8 @@
 #include "ModuleRenderer.h"
 #include "Texture.h"
 
+
+
 //#//////////////////////////////
 //#		UIShapeDisc
 //#//////////////////////////////
@@ -16,9 +18,43 @@ IMPLEMENT_CONSTRUCTOR(UIShapeDisc)
 	
 }
 
+#ifdef EBBH_EDITION
+void UIShapeDisc::InitModifiable()
+{
+	// wait for parents before init
+	if (GetParents().size() == 0)
+	{
+		return;
+	}
+
+	ParentClassType::InitModifiable();
+
+	bool removeSlice;
+	if (getValue("RemoveSlice",removeSlice))
+	{
+		if (rand() & 1)
+		{
+			removedSlice = 7;
+			// move eye image
+			CMSP eye = GetInstanceByPath("../UITexture:oeil");
+			eye("Dock") = v2f(0.35, 0.3);
+			eye("PreScaleX") = -0.6;
+		}
+		else
+		{
+			removedSlice = 0;
+		}
+
+		// remove slice also on blue circle
+		SP<UIShapeDisc> blueDisc = GetInstanceByPath("../blue/UIShapeDisc:shape");
+		blueDisc->removedSlice = removedSlice*2+1;
+	}
+}
+#endif
 void UIShapeDisc::SetTexUV(UIItem* item, UIVerticesInfo* aQI)
 {
 	const int sliceCount = mSliceCount;
+	
 	VInfo2D::Data* buf = reinterpret_cast<VInfo2D::Data*>(aQI->Buffer());
 	UITexturedItem* texturedLocalThis = static_cast<UITexturedItem*>(item);
 	kfloat ratioX, ratioY, sx, sy;
@@ -58,17 +94,36 @@ void UIShapeDisc::SetTexUV(UIItem* item, UIVerticesInfo* aQI)
 	int j = 0;
 	for (int i = 0; i < sliceCount; i++)
 	{
-		buf[j].setTexUV(circlePos[0]);
-		buf[j + 1].setTexUV(circlePos[(i + 1)]);
-		buf[j + 2].setTexUV(circlePos[((i + 1) % sliceCount) + 1]);
-		j += 3;
+#ifdef EBBH_EDITION
+		if (i != removedSlice)
+		{
+#endif
+			buf[j].setTexUV(circlePos[0]);
+			buf[j + 1].setTexUV(circlePos[(i + 1)]);
+			buf[j + 2].setTexUV(circlePos[((i + 1) % sliceCount) + 1]);
+			j += 3;
+#ifdef EBBH_EDITION
+		}
+#endif
 	}
 	
 }
 void UIShapeDisc::SetVertexArray(UIItem* item, UIVerticesInfo* aQI)
 {
 	const int sliceCount = mSliceCount;
-	aQI->Resize(3 * mSliceCount); // 3 vertices per triangles, 16 triangles
+
+#ifdef EBBH_EDITION
+	if (removedSlice >= 0)
+	{
+		aQI->Resize(3 * (mSliceCount-1)); // 3 vertices per triangles, 16 triangles
+	}
+	else
+	{
+#endif
+		aQI->Resize(3 * mSliceCount); // 3 vertices per triangles, 16 triangles
+#ifdef EBBH_EDITION
+	}
+#endif
 	VInfo2D::Data* buf = reinterpret_cast<VInfo2D::Data*>(aQI->Buffer());
 
 	v2f realsize = item->GetSize();
@@ -93,9 +148,16 @@ void UIShapeDisc::SetVertexArray(UIItem* item, UIVerticesInfo* aQI)
 	int j=0;
 	for (int i = 0; i < sliceCount; i++)
 	{
-		buf[j].setVertex(circlePos[0]);
-		buf[j + 1].setVertex(circlePos[(i+1)]);
-		buf[j + 2].setVertex(circlePos[((i+1) % sliceCount)+1]);
-		j += 3;
+#ifdef EBBH_EDITION
+		if (i != removedSlice)
+		{
+#endif
+			buf[j].setVertex(circlePos[0]);
+			buf[j + 1].setVertex(circlePos[(i + 1)]);
+			buf[j + 2].setVertex(circlePos[((i + 1) % sliceCount) + 1]);
+			j += 3;
+#ifdef EBBH_EDITION
+		}
+#endif
 	}
 }
