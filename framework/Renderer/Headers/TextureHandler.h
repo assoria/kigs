@@ -5,6 +5,45 @@
 #include "TinyImage.h"
 #include "TecLibs/2D/BBox2DI.h"
 
+
+struct SpriteSheetFrameData
+{
+	int FramePos_X;
+	int FramePos_Y;
+	int Decal_X;
+	int Decal_Y;
+	int FrameSize_X;
+	int FrameSize_Y;
+	int SourceSize_X;
+	int SourceSize_Y;
+	bool Rotated;
+	bool Trimmed;
+};
+
+class SpritesheetAnimationHandler : public CoreModifiable
+{
+public:
+
+	DECLARE_CLASS_INFO(SpritesheetAnimationHandler, CoreModifiable, Renderer)
+	SpritesheetAnimationHandler(const kstl::string& name, DECLARE_CLASS_NAME_TREE_ARG);
+
+protected:
+
+
+	/**
+	* \brief	initialize modifiable
+	* \fn		virtual	void	InitModifiable();
+	*/
+	void	InitModifiable() override
+	{
+		// TODO
+	}
+
+protected:
+	maBool	mIsLooping = BASE_ATTRIBUTE(IsLooping, false);
+
+};
+
 // ****************************************
 // * TextureHandler class
 // * --------------------------------------
@@ -12,15 +51,15 @@
 * \file	TextureHandler.h
 * \class	TextureHandler
 * \ingroup Renderer
-* \brief handle texture drawing. A TextureHandler is used to manipulate a texture or animated texture the same way
+* \brief handle texture drawing. A TextureHandler is used to manipulate a texture or animated texture or sprite in a texture the same way
 *
 */
 // ****************************************
-class TextureHandler : public Drawable
+class TextureHandler : public CoreModifiable
 {
 public:
 	
-	DECLARE_ABSTRACT_CLASS_INFO(TextureHandler,Drawable,Renderer)
+	DECLARE_CLASS_INFO(TextureHandler, CoreModifiable,Renderer)
 
 	/**
 	* \brief	constructor
@@ -30,12 +69,9 @@ public:
 	*/
 	TextureHandler(const kstl::string& name,DECLARE_CLASS_NAME_TREE_ARG);
 
-	unsigned int	GetSelfDrawingNeeds() override
-	{
-		return ((unsigned int)Need_Predraw)|((unsigned int)Need_Postdraw);
-	}
-
 protected:
+
+
 	/**
 	* \brief	initialize modifiable
 	* \fn		virtual	void	InitModifiable();
@@ -62,7 +98,53 @@ protected:
 
 	maString mTextureName = BASE_ATTRIBUTE(TextureName, "");
 
+	v2f mUVMin{ FLT_MAX, FLT_MAX };
+	v2f mUVMax{ FLT_MAX, FLT_MAX };
 
+	class 	SpriteSheetData
+	{
+	public:
+		SpriteSheetData(const std::string& json, std::string& texture);
+		~SpriteSheetData()
+		{
+			// nothing to do
+		}
+
+		bool	isOK()
+		{
+			return mAllFrameList.size();
+		}
+
+		void sortAnimation(CoreItemSP& _FrameVector);
+
+		// keep track of json filename
+		std::string													mJSonFilename;
+		
+		// list of frame per animation
+		std::map<std::string, std::vector<SpriteSheetFrameData*>>		mAnimationList;
+		// list of frame per frame name
+		std::map<std::string, std::unique_ptr<SpriteSheetFrameData>>	mAllFrameList;
+	};
+
+	void	clearSpritesheetAndAnimationData()
+	{
+		if (mSpriteSheetData)
+		{
+			delete mSpriteSheetData;
+			mSpriteSheetData = nullptr;
+		}
+		if (mAnimationData)
+		{
+			mAnimationData = nullptr;
+		}
+	}
+
+	void	initFromSpriteSheet(const std::string& jsonfilename);
+	void	initFromPicture(const std::string& picfilename);
+	void	setCurrentFrame(const std::string& framename);
+
+	SpriteSheetData*	mSpriteSheetData = nullptr;
+	SP<SpritesheetAnimationHandler>		mAnimationData = nullptr;
 };
 
 #endif //_TEXTUREHANDLER_H_
