@@ -5,7 +5,7 @@
 #include "UI/UIShapeDelegate.h"
 #include "UIVerticesInfo.h"
 #include "SmartPointer.h"
-#include "Texture.h"
+#include "TextureHandler.h"
 
 // ****************************************
 // * UITexturedItem class
@@ -31,21 +31,23 @@ public:
 	*/
 	UITexturedItem(const kstl::string& name, DECLARE_CLASS_NAME_TREE_ARG);
 
-	Texture* GetTexture() { return mTexturePointer.get(); }
-	void     SetTexture(Texture* t);
+	// TODO check if needed
+	/*SP<TextureHandler> GetTexture() { return mTexturePointer; }
+	void     SetTexture(const SP<TextureHandler>& t);*/
 
 	// manage texture directly added 
 	bool	addItem(const CMSP& item, ItemPosition pos = Last DECLARE_DEFAULT_LINK_NAME) override;
 	bool	removeItem(const CMSP& item DECLARE_DEFAULT_LINK_NAME) override;
 
-	const v2f& getUVMin() const
+	const v2f* getUVs() const
 	{
-		return mUVMin;
+		if (mTexturePointer.isNil())
+		{
+			return &mInvalidUV;
+		}
+		return mTexturePointer->getUVs();
 	}
-	const v2f& getUVMax() const
-	{
-		return mUVMax;
-	}
+	
 protected:
 	virtual ~UITexturedItem();
 	void NotifyUpdate(const unsigned int labelid) override;
@@ -56,10 +58,9 @@ protected:
 	void PreDraw(TravState* state) override;  // use for texture predraw if needed
 	void PostDraw(TravState* state) override; // use for texture postdraw if needed
 
-	SmartPointer<Texture>				mTexturePointer;
+	INSERT_FORWARDSP(TextureHandler,mTexturePointer);
 
-	v2f mUVMin{ FLT_MAX, FLT_MAX };
-	v2f mUVMax{ FLT_MAX, FLT_MAX };
+	static const v2f mInvalidUV;
 
 };
 

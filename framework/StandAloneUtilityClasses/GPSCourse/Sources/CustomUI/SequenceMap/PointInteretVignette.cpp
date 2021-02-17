@@ -159,7 +159,7 @@ void PointInteretVignette::NotifyUpdate(const unsigned int 	labelid)
 	{
 		mNamePointInteretTextShow->Set_FontSize(mTitleFontSize);
 		mNamePointInteretTextShow->Set_FontName(mFontTitleName);
-		if (mNamePointInteretTextShow->GetTexture() != NULL)
+		if (!mNamePointInteretTextShow.isNil())
 		{
 			float R, G, B, A;
 			R = mTitleColor[0];
@@ -178,7 +178,7 @@ void PointInteretVignette::NotifyUpdate(const unsigned int 	labelid)
 		mDescriptionPointInteretTextShow->Set_FontSize(mDescriptionFontSize);
 		mDescriptionPointInteretTextShow->SetAlignment(mDescriptionAlignment);
 		mDescriptionPointInteretTextShow->Set_FontName(mFontDescriptionName);
-		if (mDescriptionPointInteretTextShow->GetTexture() != NULL)
+		if (!mDescriptionPointInteretTextShow.isNil())
 		{
 			float R, G, B, A;
 			R = mDescriptionColor[0];

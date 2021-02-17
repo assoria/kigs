@@ -6,6 +6,9 @@
 #include "ModuleRenderer.h"
 #include "Texture.h"
 
+
+const v2f UITexturedItem::mInvalidUV = { FLT_MAX, FLT_MAX };
+
 //#//////////////////////////////
 //#		UITexturedItem
 //#//////////////////////////////
@@ -14,7 +17,9 @@ IMPLEMENT_CLASS_INFO(UITexturedItem)
 
 IMPLEMENT_CONSTRUCTOR(UITexturedItem)
 {
-	mTexturePointer = nullptr;
+	// create empty Textured Item
+	mTexturePointer = KigsCore::GetInstanceOf(getName()+"_TextureHandler", "TextureHandler");
+	mTexturePointer->Init();
 }
 
 void UITexturedItem::SetTexUV(UIVerticesInfo * aQI)
@@ -40,11 +45,7 @@ void UITexturedItem::SetTexUV(UIVerticesInfo * aQI)
 		mTexturePointer->GetPow2Size(p2sx, p2sy);
 		mTexturePointer->GetRatio(ratioX, ratioY);
 
-		v2f uv_min = mUVMin;
-		v2f uv_max = mUVMax;
-
-		if (uv_min == v2f(FLT_MAX, FLT_MAX)) uv_min = { 0,0 };
-		if (uv_max == v2f(FLT_MAX, FLT_MAX)) uv_max = { ratioX, ratioY };
+		const v2f* uvs =mTexturePointer->getUVs();
 
 		v2f image_size{ sx*ratioX, sy*ratioY };
 
@@ -57,26 +58,32 @@ void UITexturedItem::SetTexUV(UIVerticesInfo * aQI)
 		if (slice_size == v2f(0, 0))
 		{
 			// triangle strip order
-			buf[0].setTexUV(uv_min.x + dx, uv_min.y + dy);
-			buf[1].setTexUV(uv_min.x + dx, uv_max.y - dy);
-			buf[3].setTexUV(uv_max.x - dx, uv_max.y - dy);
-			buf[2].setTexUV(uv_max.x - dx, uv_min.y + dy);
+			buf[0].setTexUV(uvs[0].x, uvs[0].y);
+			buf[1].setTexUV(uvs[1].x, uvs[1].y);
+			buf[3].setTexUV(uvs[2].x, uvs[2].y);
+			buf[2].setTexUV(uvs[3].x, uvs[3].y);
 		}
 		else
 		{
-			v2f pixelRatio = (uv_max - uv_min) * (1.0f / image_size);
+			v2f dx = (uvs[3] - uvs[0]);
+			v2f dy = (uvs[1] - uvs[0]);
 
 			auto set_quad_uv = [&](v2f*& pts, v2f start_pos, v2f size)
 			{
-				start_pos *= pixelRatio;
-				size *= pixelRatio;
-				pts[0] = uv_min + start_pos;
-				pts[1] = uv_min + start_pos + v2f(0, size.y);
-				pts[2] = uv_min + start_pos + v2f(size.x, 0);
+			
 
-				pts[3] = uv_min + start_pos + v2f(size.x, 0);;
-				pts[4] = uv_min + start_pos + v2f(0, size.y);
-				pts[5] = uv_min + start_pos + v2f(size.x, size.y);
+				v2f deltaStart = uvs[0] + dx * start_pos.x + dy * start_pos.x;
+
+				v2f sizeX = dx * size.x;
+				v2f sizeY = dy * size.y;
+
+				pts[0] = deltaStart;
+				pts[1] = deltaStart + sizeY;
+				pts[2] = deltaStart + sizeX;
+
+				pts[3] = deltaStart + sizeX;
+				pts[4] = deltaStart + sizeY;
+				pts[5] = deltaStart + sizeY + sizeX;
 				
 				pts += 6;
 			};
@@ -119,7 +126,22 @@ void UITexturedItem::NotifyUpdate(const unsigned int labelid)
 {
 	if (!mTexturePointer.isNil())
 	{
-		
+		if (labelid == KigsID("AnimationName"))
+		{
+
+		}
+		else if (labelid == KigsID("Looping"))
+		{
+
+		}
+		else if (labelid == KigsID("CurrentAnimation"))
+		{
+
+		}
+		else if (labelid == KigsID("FramePerSecond"))
+		{
+
+		}
 	}
 
 	UIItem::NotifyUpdate(labelid);
@@ -144,10 +166,10 @@ int UITexturedItem::GetTransparencyType()
 	else // overall transparency
 		return 2;
 }
-
-void     UITexturedItem::SetTexture(Texture* t)
+/*
+void     UITexturedItem::SetTexture(const SP<TextureHandler>& t)
 {
-	mTexturePointer = NonOwningRawPtrToSmartPtr(t);
+	mTexturePointer = t;
 
 	if (mTexturePointer == nullptr)
 		return;
@@ -156,14 +178,14 @@ void     UITexturedItem::SetTexture(Texture* t)
 		mTexturePointer->setValue("IsDynamic", true);
 
 	mTexturePointer->SetRepeatUV(false, false);
-}
+}*/
 
 
 
 
 bool UITexturedItem::addItem(const CMSP& item, ItemPosition pos DECLARE_LINK_NAME)
 {
-	if (item->isSubType(Texture::mClassID))
+	if (item->isSubType(TextureHandler::mClassID))
 	{
 		mTexturePointer = item;
 
@@ -176,7 +198,7 @@ bool UITexturedItem::addItem(const CMSP& item, ItemPosition pos DECLARE_LINK_NAM
 
 bool UITexturedItem::removeItem(const CMSP& item DECLARE_LINK_NAME)
 {
-	if (item->isSubType(Texture::mClassID))
+	if (item->isSubType(TextureHandler::mClassID))
 	{
 		if (item == mTexturePointer.get())
 		{

@@ -4,17 +4,16 @@
 #include "TextureFileManager.h"
 #include "Core.h"
 
+
+
+
 IMPLEMENT_CLASS_INFO(TextureHandler)
-IMPLEMENT_CLASS_INFO(SpritesheetAnimationHandler)
 
-SpritesheetAnimationHandler::SpritesheetAnimationHandler(const kstl::string& name, CLASS_NAME_TREE_ARG) : ParentClassType(name, PASS_CLASS_NAME_TREE_ARG)
-{
-
-}
 
 TextureHandler::TextureHandler(const kstl::string& name, CLASS_NAME_TREE_ARG) : ParentClassType(name, PASS_CLASS_NAME_TREE_ARG)
 {
-	
+	// we want TextureHandler to be alert on texture change as soon as possible
+	mTextureName.changeNotificationLevel(Owner);
 }
 
 TextureHandler::~TextureHandler()
@@ -36,11 +35,11 @@ void	TextureHandler::InitModifiable()
 		{
 			changeTexture();
 		}
-		mTextureName.changeNotificationLevel(Owner);
+		
 	}
 }
 
-void TextureHandler::SpriteSheetData::sortAnimation(CoreItemSP& _FrameVector)
+void SpriteSheetData::sortAnimation(CoreItemSP& _FrameVector)
 {
 	std::vector<std::string>  str;
 	std::string AnimeName;
@@ -108,7 +107,9 @@ void TextureHandler::SpriteSheetData::sortAnimation(CoreItemSP& _FrameVector)
 	}
 }
 
-TextureHandler::SpriteSheetData::SpriteSheetData(const std::string& json, std::string& texture)
+
+
+bool	SpriteSheetData::Init(const std::string& json, std::string& texturename)
 {
 	JSonFileParser L_JsonParser;
 	CoreItemSP L_Dictionary = L_JsonParser.Get_JsonDictionary(json);
@@ -122,19 +123,29 @@ TextureHandler::SpriteSheetData::SpriteSheetData(const std::string& json, std::s
 
 		if (!L_Meta.isNil())
 		{
-			auto L_Value = L_Meta["image"];
-			L_Value->getValue(texture);
+			texturename = L_Meta["image"];
 		}
 		mJSonFilename = json;
+		return true;
 	}
+	return false;
 }
+
+//  remove dynamic attributes and disconnect events
+void	SpriteSheetData::Destroy(CoreModifiable* toDowngrade)
+{
+	
+}
+
 
 void	TextureHandler::initFromSpriteSheet(const std::string& jsonfilename)
 {
-	// check that spritesheet has changed 
-	if (mSpriteSheetData)
+	auto& textureManager = KigsCore::Singleton<TextureFileManager>();
+	std::string texturename = textureManager->GetTextureFromSpriteSheetJSON(jsonfilename);
+
+	if (!mTexture.isNil())
 	{
-		if (mSpriteSheetData->mJSonFilename == jsonfilename)
+		if (mTexture->getValue<std::string>("TextureName") == texturename) // same texture, just returns
 		{
 			return;
 		}
@@ -142,31 +153,71 @@ void	TextureHandler::initFromSpriteSheet(const std::string& jsonfilename)
 
 	clearSpritesheetAndAnimationData();
 
-	std::string	texturename;
-	SpriteSheetData* newspritesheet = new SpriteSheetData(jsonfilename,texturename);
-	if (!newspritesheet->isOK())
+	// if texture was already init in texture manager, just get texture
+	if (texturename != "")
 	{
-		delete newspritesheet;
-		newspritesheet = nullptr;
-	}
-	
-	// load texture
-	auto& textureManager = KigsCore::Singleton<TextureFileManager>();
-	mTexture = textureManager->GetTexture(texturename);
-
-	if(mTexture.isNil())
-	{
-		delete newspritesheet;
-		newspritesheet = nullptr;
+		// load texture
+		mTexture = textureManager->GetTexture(texturename);
+		return;
 	}
 
-	mSpriteSheetData = newspritesheet;
+	// else create the upgrador 
+	SpriteSheetData* newspritesheet = (SpriteSheetData*)KigsCore::Instance()->GetUpgradorFactory()->CreateClassInstance("SpriteSheetData");
+	if (newspritesheet)
+	{
+		if (newspritesheet->Init(jsonfilename, texturename))
+		{
+			mTexture = textureManager->GetTexture(texturename);
 
+			if ((!newspritesheet->isOK()) || mTexture.isNil())
+			{
+				delete newspritesheet;
+				newspritesheet = nullptr;
+				return;
+			}
+
+			mTexture->Upgrade(newspritesheet);
+			mIsSpriteSheet = true;
+		}
+	}
 }
 
-void	TextureHandler::setCurrentFrame(const std::string& framename)
+void	TextureHandler::refreshSizeAndUVs()
 {
+	Point2D s, r;
+	mTexture->GetSize(s.x, s.y);
+	mTexture->GetRatio(r.x, r.y);
+	s /= r;
+
+	kfloat dx = 0.5f / s.x;
+	kfloat dy = 0.5f / s.y;
+
+	mUV[0].Set(dx, dy);
+	mUV[1].Set(dx, r.y - dy);
+	mUV[2].Set(r.x - dx, r.y - dy);
+	mUV[3].Set(r.x - dx, dy);
+
+	mTexture->GetSize(mSize.x, mSize.y);
+}
+
+void	TextureHandler::setCurrentFrame(const SpriteSheetFrameData* ssf)
+{
+	mSize.x = ssf->SourceSize_X;
+	mSize.y = ssf->SourceSize_Y;
+
 	// TODO
+	Point2D s, r;
+	mTexture->GetSize(s.x, s.y);
+	mTexture->GetRatio(r.x, r.y);
+	s /= r;
+
+	kfloat dx = 0.5f / s.x;
+	kfloat dy = 0.5f / s.y;
+
+	mUV[0].Set(dx, dy);
+	mUV[1].Set(dx, r.y - dy);
+	mUV[2].Set(r.x - dx, r.y - dy);
+	mUV[3].Set(r.x - dx, dy);
 }
 
 void	TextureHandler::initFromPicture(const std::string& picfilename)
@@ -184,6 +235,10 @@ void	TextureHandler::initFromPicture(const std::string& picfilename)
 	// replace texture
 	mTexture = loaded;
 
+	if (mTexture) // init uv min max
+	{
+		refreshSizeAndUVs();
+	}
 }
 
 void	TextureHandler::changeTexture()
@@ -192,10 +247,28 @@ void	TextureHandler::changeTexture()
 
 	// check texture type
 	auto arr = SplitStringByCharacter(mTextureName, ':');
-	if (arr.size() > 1) // use a sprite in a spritesheet
+	if (arr.size() > 1) // use a sprite in a spritesheet 
 	{
 		initFromSpriteSheet(arr[0]);
-		setCurrentFrame(arr[1]);
+		SpriteSheetData* currentspritesheet = mTexture->getSpriteSheetData();
+		if (currentspritesheet)
+		{
+			const SpriteSheetFrameData* ssdata=currentspritesheet->getFrame(arr[1]);
+			if (ssdata)
+			{
+				setCurrentFrame(ssdata);
+			}
+			else // is it an animation ?
+			{
+				const std::vector<SpriteSheetFrameData*>* ssanim = currentspritesheet->getAnimation(arr[1]);
+				if (ssanim)
+				{
+					Upgrade("AnimationUpgrador");
+					setCurrentFrame((*ssanim)[0]);
+				}
+			}
+
+		}
 		return;
 	}
 	else
@@ -203,6 +276,7 @@ void	TextureHandler::changeTexture()
 		if (texname.find(".json") != std::string::npos) // load a spritesheet
 		{
 			initFromSpriteSheet(texname);
+			Upgrade("AnimationUpgrador");
 		}
 		else
 		{
@@ -217,4 +291,145 @@ void TextureHandler::NotifyUpdate(const unsigned int  labelid)
 	{
 		changeTexture();
 	}
+	else
+	{
+		ParentClassType::NotifyUpdate(labelid);
+	}
+}
+
+SP<Texture>	TextureHandler::GetEmptyTexture(const std::string& name)
+{
+	if (mTexture || (name == ""))
+	{
+		return mTexture;
+	}
+
+	mTexture = KigsCore::GetInstanceOf(name, "Texture");
+	mTexture->Init();
+
+	return mTexture;
+}
+
+
+// connect to events and create attributes
+void	AnimationUpgrador::Init(CoreModifiable* toUpgrade)
+{
+	// Connect notify update
+	KigsCore::Connect(toUpgrade, "NotifyUpdate", toUpgrade, "AnimationNotifyUpdate");
+
+	mCurrentAnimation = (maString*)toUpgrade->AddDynamicAttribute(CoreModifiable::ATTRIBUTE_TYPE::STRING, "CurrentAnimation", "");
+	mCurrentAnimation->changeNotificationLevel(Owner);
+	mFramePerSecond = (maUInt*)toUpgrade->AddDynamicAttribute(CoreModifiable::ATTRIBUTE_TYPE::UINT, "FramePerSecond", 24);
+	mFramePerSecond->changeNotificationLevel(Owner);
+	mLoop = (maBool*)toUpgrade->AddDynamicAttribute(CoreModifiable::ATTRIBUTE_TYPE::BOOL, "Loop", false);
+	mLoop->changeNotificationLevel(Owner);
+
+	// check if already in auto update mode
+	if (toUpgrade->isFlagAsAutoUpdateRegistered())
+		mWasdAutoUpdate = true;
+	else
+		KigsCore::GetCoreApplication()->AddAutoUpdate(toUpgrade);
+	
+}
+
+//  remove dynamic attributes and disconnect events
+void	AnimationUpgrador::Destroy(CoreModifiable* toDowngrade)
+{
+	KigsCore::Disconnect(toDowngrade, "NotifyUpdate", toDowngrade, "AnimationNotifyUpdate");
+
+	toDowngrade->RemoveDynamicAttribute("CurrentAnimation");
+	toDowngrade->RemoveDynamicAttribute("FramePerSecond");
+	toDowngrade->RemoveDynamicAttribute("Loop");
+
+	if (!mWasdAutoUpdate)
+		KigsCore::GetCoreApplication()->RemoveAutoUpdate(toDowngrade);
+}
+
+DEFINE_UPGRADOR_METHOD(AnimationUpgrador, Play)
+{
+	if (!params.empty())
+	{
+		u32 labelID;
+		params[1]->getValue(labelID);
+
+		/*if (GetUpgrador()->mTarget->getLabelID() == labelID)
+		{
+			GetUpgrador()->mCurrentTarget = (Node3D*)(CoreModifiable*)(*(maReference*)(GetUpgrador()->mTarget));
+		}*/
+
+	}
+	return false;
+}
+
+void	AnimationUpgrador::NotifyUpdate(const unsigned int  labelid, TextureHandler* parent)
+{
+	if (labelid == mCurrentAnimation->getLabelID())
+	{
+		mCurrentFrame = 0;
+		mElpasedTime = 0.0;
+
+		SpriteSheetData* currentspritesheet = parent->mTexture->getSpriteSheetData();
+		const std::vector<SpriteSheetFrameData*>* ssanim = currentspritesheet->getAnimation(*mCurrentAnimation);
+		if(ssanim)
+		{
+			mFrameNumber = ssanim->size();
+			parent->setCurrentFrame((*ssanim)[mCurrentFrame]);
+		}
+	}
+}
+
+DEFINE_UPGRADOR_METHOD(AnimationUpgrador, AnimationNotifyUpdate)
+{
+	if (!params.empty())
+	{
+		u32 labelID;
+		params[1]->getValue(labelID);
+		AnimationUpgrador* currentAnim = static_cast<AnimationUpgrador*>(GetUpgrador());
+		currentAnim->NotifyUpdate(labelID,this);
+	}
+	return false;
+}
+
+void	AnimationUpgrador::Update(const Timer& _timer, TextureHandler* parent)
+{
+	double L_delta = ((Timer&)_timer).GetDt(parent);
+	u32 prevCurrentFrame = mCurrentFrame;
+	if (mFrameNumber > 0)
+	{
+		mElpasedTime += L_delta;
+		auto animationSpeed = 1.0f / (float)((unsigned int)(*mFramePerSecond));
+		if (mElpasedTime >= animationSpeed)
+		{
+			int L_temp = (int)(mElpasedTime / animationSpeed);
+			mCurrentFrame += L_temp;
+			if ((bool)(*mLoop))
+			{
+				mCurrentFrame = mCurrentFrame % mFrameNumber;
+			}
+			else if (mCurrentFrame >= mFrameNumber)
+			{
+				mCurrentFrame = mFrameNumber - 1;
+			}
+			mElpasedTime -= animationSpeed * ((float)(L_temp));
+		}
+	}
+	else
+	{
+		mElpasedTime = 0;
+	}
+	if (prevCurrentFrame != mCurrentFrame)
+	{
+		SpriteSheetData* currentspritesheet = parent->mTexture->getSpriteSheetData();
+		const std::vector<SpriteSheetFrameData*>* ssanim = currentspritesheet->getAnimation(*mCurrentAnimation);
+		if (ssanim)
+		{
+			parent->setCurrentFrame((*ssanim)[mCurrentFrame]);
+		}
+	}
+}
+
+DEFINE_UPGRADOR_UPDATE(AnimationUpgrador)
+{
+	AnimationUpgrador* currentAnim=static_cast<AnimationUpgrador*>(GetUpgrador());
+	currentAnim->Update(timer,this);
 }

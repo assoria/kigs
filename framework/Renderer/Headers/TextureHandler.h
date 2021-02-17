@@ -4,45 +4,9 @@
 #include "Drawable.h"
 #include "TinyImage.h"
 #include "TecLibs/2D/BBox2DI.h"
+#include "Upgrador.h"
+#include "Texture.h"
 
-
-struct SpriteSheetFrameData
-{
-	int FramePos_X;
-	int FramePos_Y;
-	int Decal_X;
-	int Decal_Y;
-	int FrameSize_X;
-	int FrameSize_Y;
-	int SourceSize_X;
-	int SourceSize_Y;
-	bool Rotated;
-	bool Trimmed;
-};
-
-class SpritesheetAnimationHandler : public CoreModifiable
-{
-public:
-
-	DECLARE_CLASS_INFO(SpritesheetAnimationHandler, CoreModifiable, Renderer)
-	SpritesheetAnimationHandler(const kstl::string& name, DECLARE_CLASS_NAME_TREE_ARG);
-
-protected:
-
-
-	/**
-	* \brief	initialize modifiable
-	* \fn		virtual	void	InitModifiable();
-	*/
-	void	InitModifiable() override
-	{
-		// TODO
-	}
-
-protected:
-	maBool	mIsLooping = BASE_ATTRIBUTE(IsLooping, false);
-
-};
 
 // ****************************************
 // * TextureHandler class
@@ -58,7 +22,7 @@ protected:
 class TextureHandler : public CoreModifiable
 {
 public:
-	
+	friend class AnimationUpgrador;
 	DECLARE_CLASS_INFO(TextureHandler, CoreModifiable,Renderer)
 
 	/**
@@ -69,8 +33,85 @@ public:
 	*/
 	TextureHandler(const kstl::string& name,DECLARE_CLASS_NAME_TREE_ARG);
 
-protected:
+	// access to texture methods
+	void SetRepeatUV(bool RU, bool RV) 
+	{
+		if (mTexture)
+		{
+			mTexture->SetRepeatUV(RU, RV);
+		}
+	}
 
+	void	DoPreDraw(TravState* st)
+	{
+		if (mTexture)
+		{
+			mTexture->DoPreDraw(st);
+		}
+	}
+	void	DoPostDraw(TravState* st)
+	{
+		if (mTexture)
+		{
+			mTexture->DoPostDraw(st);
+		}
+	}
+
+	void GetSize(unsigned int& width, unsigned int& height)
+	{
+		width = mSize.x;
+		height = mSize.y;
+	}
+
+
+	void GetSize(float& width, float& height)
+	{
+		width = mSize.x;
+		height = mSize.y;
+	}
+
+	void GetPow2Size(unsigned int& width, unsigned int& height)
+	{
+		if (mTexture)
+		{
+			mTexture->GetPow2Size(width, height);
+		}
+	}
+	void GetRatio(kfloat& rX, kfloat& rY) 
+	{
+		if (mTexture)
+		{
+			mTexture->GetRatio(rX, rY);
+		}
+	}
+	int GetTransparency() 
+	{ 
+		if (mTexture)
+		{
+			return mTexture->GetTransparency();
+		}
+		return 0;
+	}
+
+	void SetFlag(unsigned int flag)
+	{
+		if (mTexture)
+		{
+			mTexture->SetFlag(flag);
+		}
+	}
+
+	const v2f* getUVs() const
+	{
+		return mUV;
+	}
+
+	SP<Texture>	GetEmptyTexture(const std::string& name="");
+	// use mTextureName to load texture
+	void	changeTexture();
+
+	void	refreshSizeAndUVs();
+protected:
 
 	/**
 	* \brief	initialize modifiable
@@ -91,60 +132,54 @@ protected:
 	*/
 	virtual ~TextureHandler();
 
-	// use mTextureName to load texture
-	void	changeTexture();
-
 	SP<Texture>	mTexture = nullptr;
 
 	maString mTextureName = BASE_ATTRIBUTE(TextureName, "");
 
-	v2f mUVMin{ FLT_MAX, FLT_MAX };
-	v2f mUVMax{ FLT_MAX, FLT_MAX };
+	v2f mUV[4];
 
-	class 	SpriteSheetData
-	{
-	public:
-		SpriteSheetData(const std::string& json, std::string& texture);
-		~SpriteSheetData()
-		{
-			// nothing to do
-		}
-
-		bool	isOK()
-		{
-			return mAllFrameList.size();
-		}
-
-		void sortAnimation(CoreItemSP& _FrameVector);
-
-		// keep track of json filename
-		std::string													mJSonFilename;
-		
-		// list of frame per animation
-		std::map<std::string, std::vector<SpriteSheetFrameData*>>		mAnimationList;
-		// list of frame per frame name
-		std::map<std::string, std::unique_ptr<SpriteSheetFrameData>>	mAllFrameList;
-	};
+	v2f mSize;
 
 	void	clearSpritesheetAndAnimationData()
 	{
-		if (mSpriteSheetData)
-		{
-			delete mSpriteSheetData;
-			mSpriteSheetData = nullptr;
-		}
-		if (mAnimationData)
-		{
-			mAnimationData = nullptr;
-		}
 	}
 
 	void	initFromSpriteSheet(const std::string& jsonfilename);
 	void	initFromPicture(const std::string& picfilename);
-	void	setCurrentFrame(const std::string& framename);
+	void	setCurrentFrame(const SpriteSheetFrameData* ssf);
 
-	SpriteSheetData*	mSpriteSheetData = nullptr;
-	SP<SpritesheetAnimationHandler>		mAnimationData = nullptr;
+	bool	mIsSpriteSheet = false;
+};
+
+
+class 	AnimationUpgrador : public Upgrador<TextureHandler>
+{
+protected:
+	// create and init Upgrador if needed and add dynamic attributes
+	virtual void	Init(CoreModifiable* toUpgrade) override;
+
+	// destroy UpgradorData and remove dynamic attributes 
+	virtual void	Destroy(CoreModifiable* toDowngrade) override;
+
+	START_UPGRADOR(AnimationUpgrador);
+
+	UPGRADOR_METHODS(Play, AnimationNotifyUpdate);
+
+	void	Update(const Timer& _timer, TextureHandler* parent);
+	void	NotifyUpdate(const unsigned int /* labelid */, TextureHandler* parent);
+
+public:
+
+	maString*			mCurrentAnimation=nullptr;
+	maUInt*				mFramePerSecond = nullptr;
+	maBool*				mLoop = nullptr;
+	bool				mWasdAutoUpdate = false;
+	unsigned int		mCurrentFrame = 0;
+	double				mElpasedTime = 0.0;
+	unsigned int		mFrameNumber = 0;
+
+protected:
+	
 };
 
 #endif //_TEXTUREHANDLER_H_

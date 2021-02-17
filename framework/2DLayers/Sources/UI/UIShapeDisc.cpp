@@ -21,22 +21,9 @@ void UIShapeDisc::SetTexUV(UIItem* item, UIVerticesInfo* aQI)
 	const int sliceCount = mSliceCount;
 	VInfo2D::Data* buf = reinterpret_cast<VInfo2D::Data*>(aQI->Buffer());
 	UITexturedItem* texturedLocalThis = static_cast<UITexturedItem*>(item);
-	kfloat ratioX, ratioY, sx, sy;
-	unsigned int p2sx, p2sy;
-	texturedLocalThis->GetTexture()->GetSize(sx, sy);
-	texturedLocalThis->GetTexture()->GetPow2Size(p2sx, p2sy);
-	texturedLocalThis->GetTexture()->GetRatio(ratioX, ratioY);
 
-	v2f uv_min = texturedLocalThis->getUVMin();
+	/*v2f uv_min = texturedLocalThis->getUVMin();
 	v2f uv_max = texturedLocalThis->getUVMax();
-
-	if (uv_min == v2f(FLT_MAX, FLT_MAX)) uv_min = { 0,0 };
-	if (uv_max == v2f(FLT_MAX, FLT_MAX)) uv_max = { ratioX, ratioY };
-
-	v2f dxy ( 0.5f / (float)p2sx, 0.5f / (float)p2sy);
-
-	uv_min += dxy;
-	uv_max -= dxy;
 
 	v2f realsize = uv_max- uv_min;
 	v2f halfSize = realsize * 0.5f;
@@ -62,7 +49,7 @@ void UIShapeDisc::SetTexUV(UIItem* item, UIVerticesInfo* aQI)
 		buf[j + 1].setTexUV(circlePos[(i + 1)]);
 		buf[j + 2].setTexUV(circlePos[((i + 1) % sliceCount) + 1]);
 		j += 3;
-	}
+	}*/
 	
 }
 void UIShapeDisc::SetVertexArray(UIItem* item, UIVerticesInfo* aQI)

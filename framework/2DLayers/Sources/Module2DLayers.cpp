@@ -16,8 +16,8 @@
 // registered UI class includes
 #include "UI/PassiveColoredMask.h"
 #include "UI/UI3DLinkedItem.h"
-#include "UI/UIAnimatedButton.h"
-#include "UI/UIAnimatedSprite.h"
+//#include "UI/UIAnimatedButton.h"
+//#include "UI/UIAnimatedSprite.h"
 #include "UI/UIBoxLayout.h"
 #include "UI/UIButton.h"
 #include "UI/UIButtonImage.h"
@@ -47,7 +47,7 @@
 #include "UI/UISlider.h"
 #include "UI/UISliderFill.h"
 #include "UI/UISlidersGroup.h"
-#include "UI/UISprite.h"
+//#include "UI/UISprite.h"
 #include "UI/UIStream.h"
 #include "UI/UIText.h"
 #include "UI/UITextArea.h"
@@ -84,8 +84,8 @@ void Module2DLayers::Init(KigsCore* core, const kstl::vector<CoreModifiableAttri
 
 	DECLARE_FULL_CLASS_INFO(core, UI3DLinkedItem, UI3DLinkedItem, 2DLayers);
 	DECLARE_FULL_CLASS_INFO(core, PassiveColoredMask, PassiveColoredMask, 2DLayers);
-	DECLARE_FULL_CLASS_INFO(core, UIAnimatedButton, UIAnimatedButton, 2DLayers);
-	DECLARE_FULL_CLASS_INFO(core, UIAnimatedSprite, UIAnimatedSprite, 2DLayers);
+	//DECLARE_FULL_CLASS_INFO(core, UIAnimatedButton, UIAnimatedButton, 2DLayers);
+	//DECLARE_FULL_CLASS_INFO(core, UIAnimatedSprite, UIAnimatedSprite, 2DLayers);
 	DECLARE_FULL_CLASS_INFO(core, UIBoxLayout, UIBoxLayout, 2DLayers);
 	DECLARE_FULL_CLASS_INFO(core, UIButton, UIButton, 2DLayers);
 	DECLARE_FULL_CLASS_INFO(core, UIButtonImage, UIButtonImage, 2DLayers);
@@ -120,7 +120,7 @@ void Module2DLayers::Init(KigsCore* core, const kstl::vector<CoreModifiableAttri
 	DECLARE_FULL_CLASS_INFO(core, UISlider, UISlider, 2DLayers);
 	DECLARE_FULL_CLASS_INFO(core, UISliderFill, UISliderFill, 2DLayers);
 	DECLARE_FULL_CLASS_INFO(core, UISlidersGroup, UISlidersGroup, 2DLayers);
-	DECLARE_FULL_CLASS_INFO(core, UISprite, UISprite, 2DLayers);
+	//DECLARE_FULL_CLASS_INFO(core, UISprite, UISprite, 2DLayers);
 	DECLARE_FULL_CLASS_INFO(core, UIStream, UIStream, 2DLayers);
 	DECLARE_FULL_CLASS_INFO(core, UIText, UIText, 2DLayers);
 	DECLARE_FULL_CLASS_INFO(core, UITextArea, UITextArea, 2DLayers);
