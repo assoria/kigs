@@ -31,26 +31,34 @@ public:
 	*/
 	UITexturedItem(const kstl::string& name, DECLARE_CLASS_NAME_TREE_ARG);
 
+	bool	HasTexture()
+	{
+		if (mTexturePointer)
+			return mTexturePointer->HasTexture();
+
+		return false;
+	}
+
 	// TODO check if needed
-	/*SP<TextureHandler> GetTexture() { return mTexturePointer; }
-	void     SetTexture(const SP<TextureHandler>& t);*/
+	SP<TextureHandler> GetTexture() { return mTexturePointer; }
+	//void     SetTexture(const SP<TextureHandler>& t);
 
 	// manage texture directly added 
 	bool	addItem(const CMSP& item, ItemPosition pos = Last DECLARE_DEFAULT_LINK_NAME) override;
 	bool	removeItem(const CMSP& item DECLARE_DEFAULT_LINK_NAME) override;
 
-	const v2f* getUVs() const
+	void getUVInfos(v2f& UVStart, v2f& UVector, v2f& VVector) const
 	{
 		if (mTexturePointer.isNil())
 		{
-			return &mInvalidUV;
+			UVStart = mInvalidUV;
+			return;
 		}
-		return mTexturePointer->getUVs();
+		return mTexturePointer->getUVInfos( UVStart, UVector,VVector);
 	}
 	
 protected:
 	virtual ~UITexturedItem();
-	void NotifyUpdate(const unsigned int labelid) override;
 
 	void SetTexUV(UIVerticesInfo * aQI) override;
 

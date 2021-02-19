@@ -5,8 +5,6 @@
 #include "Core.h"
 
 
-
-
 IMPLEMENT_CLASS_INFO(TextureHandler)
 
 
@@ -18,7 +16,7 @@ TextureHandler::TextureHandler(const kstl::string& name, CLASS_NAME_TREE_ARG) : 
 
 TextureHandler::~TextureHandler()
 {
-	clearSpritesheetAndAnimationData();
+
 }
 
 void	TextureHandler::InitModifiable()
@@ -151,13 +149,15 @@ void	TextureHandler::initFromSpriteSheet(const std::string& jsonfilename)
 		}
 	}
 
-	clearSpritesheetAndAnimationData();
-
 	// if texture was already init in texture manager, just get texture
 	if (texturename != "")
 	{
 		// load texture
 		mTexture = textureManager->GetTexture(texturename);
+		if (mTexture)
+		{
+			refreshTextureInfos();
+		}
 		return;
 	}
 
@@ -177,47 +177,12 @@ void	TextureHandler::initFromSpriteSheet(const std::string& jsonfilename)
 			}
 
 			mTexture->Upgrade(newspritesheet);
-			mIsSpriteSheet = true;
 		}
 	}
-}
-
-void	TextureHandler::refreshSizeAndUVs()
-{
-	Point2D s, r;
-	mTexture->GetSize(s.x, s.y);
-	mTexture->GetRatio(r.x, r.y);
-	s /= r;
-
-	kfloat dx = 0.5f / s.x;
-	kfloat dy = 0.5f / s.y;
-
-	mUV[0].Set(dx, dy);
-	mUV[1].Set(dx, r.y - dy);
-	mUV[2].Set(r.x - dx, r.y - dy);
-	mUV[3].Set(r.x - dx, dy);
-
-	mTexture->GetSize(mSize.x, mSize.y);
-}
-
-void	TextureHandler::setCurrentFrame(const SpriteSheetFrameData* ssf)
-{
-	mSize.x = ssf->SourceSize_X;
-	mSize.y = ssf->SourceSize_Y;
-
-	// TODO
-	Point2D s, r;
-	mTexture->GetSize(s.x, s.y);
-	mTexture->GetRatio(r.x, r.y);
-	s /= r;
-
-	kfloat dx = 0.5f / s.x;
-	kfloat dy = 0.5f / s.y;
-
-	mUV[0].Set(dx, dy);
-	mUV[1].Set(dx, r.y - dy);
-	mUV[2].Set(r.x - dx, r.y - dy);
-	mUV[3].Set(r.x - dx, dy);
+	if (mTexture)
+	{
+		refreshTextureInfos();
+	}
 }
 
 void	TextureHandler::initFromPicture(const std::string& picfilename)
@@ -230,16 +195,10 @@ void	TextureHandler::initFromPicture(const std::string& picfilename)
 	{
 		return;
 	}
-	clearSpritesheetAndAnimationData();
-
-	// replace texture
-	mTexture = loaded;
-
-	if (mTexture) // init uv min max
-	{
-		refreshSizeAndUVs();
-	}
+	setTexture(loaded);
 }
+
+
 
 void	TextureHandler::changeTexture()
 {
@@ -283,6 +242,7 @@ void	TextureHandler::changeTexture()
 			initFromPicture(texname);
 		}
 	}
+
 }
 
 void TextureHandler::NotifyUpdate(const unsigned int  labelid)
@@ -309,6 +269,72 @@ SP<Texture>	TextureHandler::GetEmptyTexture(const std::string& name)
 
 	return mTexture;
 }
+
+
+void	TextureHandler::setCurrentFrame(const SpriteSheetFrameData* ssf)
+{
+	mCurrentFrame = ssf;
+	mSize.x = ssf->SourceSize_X;
+	mSize.y = ssf->SourceSize_Y;
+
+	refreshSizeAndUVs(ssf);
+}
+
+v2f	TextureHandler::getUVforPosInPixels(const v2f& pos)
+{
+	v2f result(mUVStart);
+
+	v2f dx(pos.x * mUVector);
+	v2f dy(pos.y * mVVector);
+
+	dx *= mOneOnPower2Size;
+	dy *= mOneOnPower2Size;
+
+	return result+dx+dy;
+}
+
+void	TextureHandler::refreshSizeAndUVs(const SpriteSheetFrameData* ssf)
+{
+	float dx = 0.5f * mOneOnPower2Size.x;
+	float dy = 0.5f * mOneOnPower2Size.y;
+
+	mUVStart.Set(dx, dy);
+
+	if (ssf)
+	{
+		mUVStart.x = (ssf->FramePos_X + 0.5f) * mOneOnPower2Size.x;
+		mUVStart.y = (ssf->FramePos_Y + 0.5f) * mOneOnPower2Size.y;
+		if (ssf->Rotated)
+		{
+			mUVector.Set(0.0f, 1.0f);
+			mVVector.Set(1.0f, 0.0f);
+		}
+		else
+		{
+			mUVector.Set(1.0f, 0.0f);
+			mVVector.Set(0.0f, 1.0f);
+		}
+		mSize.x = ssf->FrameSize_X;
+		mSize.y = ssf->FrameSize_Y;
+	}
+	else
+	{
+		mUVector.Set(1.0f, 0.0f);
+		mVVector.Set(0.0f, 1.0f);
+		mTexture->GetSize(mSize.x, mSize.y);
+	}
+}
+
+void	TextureHandler::refreshTextureInfos()
+{
+	unsigned int Pow2X, Pow2Y;
+	mTexture->GetPow2Size(Pow2X, Pow2Y);
+	mOneOnPower2Size.x = 1.0f / (float)Pow2X;
+	mOneOnPower2Size.y = 1.0f / (float)Pow2Y;
+	
+	refreshSizeAndUVs(mCurrentFrame);
+}
+
 
 
 // connect to events and create attributes

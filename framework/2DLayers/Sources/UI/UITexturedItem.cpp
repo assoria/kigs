@@ -27,6 +27,10 @@ void UITexturedItem::SetTexUV(UIVerticesInfo * aQI)
 	
 	if (!mTexturePointer.isNil())
 	{
+		if (mTexturePointer->getTexture().isNil())
+		{
+			return;
+		}
 		aQI->Flag |= UIVerticesInfo_Texture;
 
 		bool is_bgr = false;
@@ -39,15 +43,19 @@ void UITexturedItem::SetTexUV(UIVerticesInfo * aQI)
 		{
 			return mShape->SetTexUV(this, aQI);
 		}
-		kfloat ratioX, ratioY, sx, sy;
+		kfloat ratioX, ratioY;
+		v2f isize;
 		unsigned int p2sx, p2sy;
-		mTexturePointer->GetSize(sx, sy);
+		mTexturePointer->GetSize(isize.x, isize.y);
 		mTexturePointer->GetPow2Size(p2sx, p2sy);
 		mTexturePointer->GetRatio(ratioX, ratioY);
 
-		const v2f* uvs =mTexturePointer->getUVs();
 
-		v2f image_size{ sx*ratioX, sy*ratioY };
+		v2f uvStart, UVector, VVector;
+
+		mTexturePointer->getUVInfos(uvStart, UVector, VVector);
+
+		v2f image_size{ isize.x *ratioX, isize.y *ratioY };
 
 		kfloat dx = 0.5f / ((float)p2sx);
 		kfloat dy = 0.5f / ((float)p2sy);
@@ -58,32 +66,30 @@ void UITexturedItem::SetTexUV(UIVerticesInfo * aQI)
 		if (slice_size == v2f(0, 0))
 		{
 			// triangle strip order
-			buf[0].setTexUV(uvs[0].x, uvs[0].y);
-			buf[1].setTexUV(uvs[1].x, uvs[1].y);
-			buf[3].setTexUV(uvs[2].x, uvs[2].y);
-			buf[2].setTexUV(uvs[3].x, uvs[3].y);
+			buf[0].setTexUV(uvStart.x, uvStart.y);
+			v2f uvpos = mTexturePointer->getUVforPosInPixels({ 0,isize.y - 1.0f });
+			buf[1].setTexUV(uvpos.x, uvpos.y);
+			uvpos = mTexturePointer->getUVforPosInPixels({ isize.x-1.0f,isize.y - 1.0f });
+			buf[3].setTexUV(uvpos.x, uvpos.y);
+			uvpos = mTexturePointer->getUVforPosInPixels({ isize.x - 1.0f,0.0f });
+			buf[2].setTexUV(uvpos.x, uvpos.y);
 		}
 		else
 		{
-			v2f dx = (uvs[3] - uvs[0]);
-			v2f dy = (uvs[1] - uvs[0]);
-
+	
 			auto set_quad_uv = [&](v2f*& pts, v2f start_pos, v2f size)
 			{
 			
-
-				v2f deltaStart = uvs[0] + dx * start_pos.x + dy * start_pos.x;
-
-				v2f sizeX = dx * size.x;
-				v2f sizeY = dy * size.y;
-
-				pts[0] = deltaStart;
-				pts[1] = deltaStart + sizeY;
-				pts[2] = deltaStart + sizeX;
-
-				pts[3] = deltaStart + sizeX;
-				pts[4] = deltaStart + sizeY;
-				pts[5] = deltaStart + sizeY + sizeX;
+				v2f uvpos = mTexturePointer->getUVforPosInPixels(start_pos);
+				pts[0] = uvpos;
+				uvpos = mTexturePointer->getUVforPosInPixels({ start_pos.x,start_pos.y + size.y });
+				pts[1] = uvpos;
+				pts[4] = uvpos;
+				uvpos = mTexturePointer->getUVforPosInPixels({ start_pos.x+size.x ,start_pos.y });
+				pts[2] = uvpos;
+				pts[3] = uvpos;
+				uvpos = mTexturePointer->getUVforPosInPixels({ start_pos.x + size.x ,start_pos.y+size.y });
+				pts[5] = uvpos;
 				
 				pts += 6;
 			};
@@ -120,31 +126,6 @@ void UITexturedItem::SetTexUV(UIVerticesInfo * aQI)
 UITexturedItem::~UITexturedItem()
 {
 	mTexturePointer = NULL;
-}
-
-void UITexturedItem::NotifyUpdate(const unsigned int labelid)
-{
-	if (!mTexturePointer.isNil())
-	{
-		if (labelid == KigsID("AnimationName"))
-		{
-
-		}
-		else if (labelid == KigsID("Looping"))
-		{
-
-		}
-		else if (labelid == KigsID("CurrentAnimation"))
-		{
-
-		}
-		else if (labelid == KigsID("FramePerSecond"))
-		{
-
-		}
-	}
-
-	UIItem::NotifyUpdate(labelid);
 }
 
 void UITexturedItem::PreDraw(TravState* state)
@@ -185,9 +166,9 @@ void     UITexturedItem::SetTexture(const SP<TextureHandler>& t)
 
 bool UITexturedItem::addItem(const CMSP& item, ItemPosition pos DECLARE_LINK_NAME)
 {
-	if (item->isSubType(TextureHandler::mClassID))
+	if (item->isSubType(Texture::mClassID))
 	{
-		mTexturePointer = item;
+		mTexturePointer->setTexture((SP<Texture>&)item);
 
 		if (mTexturePointer && getAttribute("HasDynamicTexture"))
 			mTexturePointer->setValue("IsDynamic", true);
@@ -198,11 +179,11 @@ bool UITexturedItem::addItem(const CMSP& item, ItemPosition pos DECLARE_LINK_NAM
 
 bool UITexturedItem::removeItem(const CMSP& item DECLARE_LINK_NAME)
 {
-	if (item->isSubType(TextureHandler::mClassID))
+	if (item->isSubType(Texture::mClassID))
 	{
-		if (item == mTexturePointer.get())
+		if (item.get() == mTexturePointer->getTexture().get())
 		{
-			mTexturePointer = 0;
+			mTexturePointer->setTexture(nullptr);
 		}
 	}
 	return UIDrawableItem::removeItem(item PASS_LINK_NAME(linkName));

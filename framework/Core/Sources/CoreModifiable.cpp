@@ -605,8 +605,8 @@ CoreModifiableAttribute* CoreModifiable::findAttributeOnThisOnly(const KigsID& i
 				{
 					return search;
 				}
-				found = found->getNext(LazyContentLinkedListItemStruct::ItemType::ForwardSmartPtrType);
 			}
+			found = found->getNext(LazyContentLinkedListItemStruct::ItemType::ForwardSmartPtrType);
 		}
 	}
 	return nullptr;

@@ -122,7 +122,7 @@ void	UIText::ChangeText(const usString& _newText)
 		if (localized)
 		{
 			mTexturePointer->GetEmptyTexture()->CreateFromText(localized, mMaxLines, mMaxWidth, (unsigned int)((float)((unsigned int)mFontSize) * LanguageScale), (mFont.const_ref()).c_str(), mTextAlignment, 255, 255, 255, 255, TinyImage::RGBA_32_8888);
-			mTexturePointer->refreshSizeAndUVs();
+			mTexturePointer->refreshTextureInfos();
 		}
 		if (modified)
 			free(localized);
@@ -137,7 +137,7 @@ void	UIText::ChangeText(const usString& _newText)
 			L_returneValue = const_cast<unsigned short*>(_newText.us_str());
 
 		mTexturePointer->GetEmptyTexture()->CreateFromText(L_returneValue, mMaxLines, mMaxWidth, (unsigned int)((float)((unsigned int)mFontSize) * LanguageScale), (mFont.const_ref()).c_str(), mTextAlignment, 255, 255, 255,255, TinyImage::RGBA_32_8888);
-		mTexturePointer->refreshSizeAndUVs();
+		mTexturePointer->refreshTextureInfos();
 		if (modified)
 			free(L_returneValue);
 	}

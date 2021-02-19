@@ -44,7 +44,7 @@
 #include "UI/UIText.cpp"
 #include "UI/UITextArea.cpp"
 #include "UI/UITextInput.cpp"
-#include "UI/UITexture.cpp"
+//#include "UI/UITexture.cpp"
 #include "UI/UITexturedItem.cpp"
 #include "UI/UIVideo.cpp"
 #include "UI/UINode3DLayer.cpp"

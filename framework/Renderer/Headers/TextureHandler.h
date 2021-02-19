@@ -101,16 +101,52 @@ public:
 		}
 	}
 
-	const v2f* getUVs() const
+	v2f	getUVforPosInPixels(const v2f& pos);
+
+	void getUVInfos(v2f& UVStart,v2f& UVector,v2f& VVector) const
 	{
-		return mUV;
+		UVStart = mUVStart;
+		UVector = mUVector;
+		VVector = mVVector;
+	}
+
+	bool HasTexture()
+	{
+		return !mTexture.isNil();
 	}
 
 	SP<Texture>	GetEmptyTexture(const std::string& name="");
 	// use mTextureName to load texture
 	void	changeTexture();
 
-	void	refreshSizeAndUVs();
+	void	refreshTextureInfos();
+
+	void	setTexture(SP<Texture> texture)
+	{
+		mCurrentFrame = nullptr;
+		if (GetUpgrador("AnimationUpgrador"))
+		{
+			Downgrade("AnimationUpgrador");
+		}
+		// replace texture
+		mTexture = texture;
+
+		if (mTexture)
+		{
+			refreshTextureInfos();
+		}
+		else // reset some values
+		{
+			mSize.Set( 0.0f,0.0f );
+			mUVStart.Set(0.0f, 0.0f);
+		}
+
+	}
+
+	SP<Texture> getTexture()
+	{
+		return mTexture;
+	}
 protected:
 
 	/**
@@ -132,23 +168,28 @@ protected:
 	*/
 	virtual ~TextureHandler();
 
-	SP<Texture>	mTexture = nullptr;
+	INSERT_FORWARDSP(Texture,mTexture);
 
 	maString mTextureName = BASE_ATTRIBUTE(TextureName, "");
 
-	v2f mUV[4];
+	void	refreshSizeAndUVs(const SpriteSheetFrameData* ssf);
 
-	v2f mSize;
+	// starting pos of texture in uv coordinates
+	v2f mUVStart = { 0.0f,0.0f };
+	// size of one pixel in uv coordinates
+	v2f mOneOnPower2Size;
+	// unit vector in U direction (for rotated textures)
+	v2f mUVector;
+	// unit vector in V direction (for rotated textures)
+	v2f mVVector;
 
-	void	clearSpritesheetAndAnimationData()
-	{
-	}
+	v2f mSize = {0.0f,0.0f};
 
 	void	initFromSpriteSheet(const std::string& jsonfilename);
 	void	initFromPicture(const std::string& picfilename);
 	void	setCurrentFrame(const SpriteSheetFrameData* ssf);
 
-	bool	mIsSpriteSheet = false;
+	const SpriteSheetFrameData* mCurrentFrame = nullptr;
 };
 
 

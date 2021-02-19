@@ -22,24 +22,25 @@ void UIShapeDisc::SetTexUV(UIItem* item, UIVerticesInfo* aQI)
 	VInfo2D::Data* buf = reinterpret_cast<VInfo2D::Data*>(aQI->Buffer());
 	UITexturedItem* texturedLocalThis = static_cast<UITexturedItem*>(item);
 
-	/*v2f uv_min = texturedLocalThis->getUVMin();
-	v2f uv_max = texturedLocalThis->getUVMax();
-
-	v2f realsize = uv_max- uv_min;
-	v2f halfSize = realsize * 0.5f;
-	v2f center = (uv_max+ uv_min) * 0.5f;
+	v2f isize;
+	texturedLocalThis->GetTexture()->GetSize(isize.x, isize.y);
+	
+	v2f center = isize * 0.5f;
 
 	std::vector<v2f>	circlePos;
 	circlePos.resize(sliceCount + 1);
 
 	float angle = (2.0 * PI) / ((double)sliceCount);
 	circlePos[0] = center;
+	circlePos[0] = texturedLocalThis->GetTexture()->getUVforPosInPixels(circlePos[0]);
 	for (int i = 1; i <= sliceCount; i++)
 	{
 		circlePos[i] = center;
 		float currentAngle = angle * (double)i - angle * 0.5;
-		circlePos[i].x += halfSize.x * cosf(currentAngle);
-		circlePos[i].y += halfSize.y * sinf(currentAngle);
+		circlePos[i].x += center.x * cosf(currentAngle);
+		circlePos[i].y += center.y * sinf(currentAngle);
+
+		circlePos[i] = texturedLocalThis->GetTexture()->getUVforPosInPixels(circlePos[i]);
 	}
 
 	int j = 0;
@@ -49,7 +50,7 @@ void UIShapeDisc::SetTexUV(UIItem* item, UIVerticesInfo* aQI)
 		buf[j + 1].setTexUV(circlePos[(i + 1)]);
 		buf[j + 2].setTexUV(circlePos[((i + 1) % sliceCount) + 1]);
 		j += 3;
-	}*/
+	}
 	
 }
 void UIShapeDisc::SetVertexArray(UIItem* item, UIVerticesInfo* aQI)
