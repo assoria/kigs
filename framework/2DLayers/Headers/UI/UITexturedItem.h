@@ -46,18 +46,17 @@ public:
 	// manage texture directly added 
 	bool	addItem(const CMSP& item, ItemPosition pos = Last DECLARE_DEFAULT_LINK_NAME) override;
 	bool	removeItem(const CMSP& item DECLARE_DEFAULT_LINK_NAME) override;
-
-	void getUVInfos(v2f& UVStart, v2f& UVector, v2f& VVector) const
-	{
-		if (mTexturePointer.isNil())
-		{
-			UVStart = mInvalidUV;
-			return;
-		}
-		return mTexturePointer->getUVInfos( UVStart, UVector,VVector);
-	}
 	
 protected:
+
+	virtual v2f getDrawablePos(const v2f& pos)
+	{
+		if (mTexturePointer)
+			return mTexturePointer->getDrawablePos(pos);
+
+		return pos;
+	}
+
 	virtual ~UITexturedItem();
 
 	void SetTexUV(UIVerticesInfo * aQI) override;

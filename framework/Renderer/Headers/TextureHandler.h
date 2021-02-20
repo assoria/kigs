@@ -103,12 +103,7 @@ public:
 
 	v2f	getUVforPosInPixels(const v2f& pos);
 
-	void getUVInfos(v2f& UVStart,v2f& UVector,v2f& VVector) const
-	{
-		UVStart = mUVStart;
-		UVector = mUVector;
-		VVector = mVVector;
-	}
+	v2f getDrawablePos(const v2f& pos);
 
 	bool HasTexture()
 	{

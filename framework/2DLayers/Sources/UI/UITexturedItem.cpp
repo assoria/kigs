@@ -43,31 +43,20 @@ void UITexturedItem::SetTexUV(UIVerticesInfo * aQI)
 		{
 			return mShape->SetTexUV(this, aQI);
 		}
-		kfloat ratioX, ratioY;
+		
 		v2f isize;
-		unsigned int p2sx, p2sy;
 		mTexturePointer->GetSize(isize.x, isize.y);
-		mTexturePointer->GetPow2Size(p2sx, p2sy);
-		mTexturePointer->GetRatio(ratioX, ratioY);
 
-
-		v2f uvStart, UVector, VVector;
-
-		mTexturePointer->getUVInfos(uvStart, UVector, VVector);
-
-		v2f image_size{ isize.x *ratioX, isize.y *ratioY };
-
-		kfloat dx = 0.5f / ((float)p2sx);
-		kfloat dy = 0.5f / ((float)p2sy);
-
+	
 		VInfo2D::Data* buf = reinterpret_cast<VInfo2D::Data*>(aQI->Buffer());
 
 		auto slice_size = (v2f)mSliced;
 		if (slice_size == v2f(0, 0))
 		{
 			// triangle strip order
-			buf[0].setTexUV(uvStart.x, uvStart.y);
-			v2f uvpos = mTexturePointer->getUVforPosInPixels({ 0,isize.y - 1.0f });
+			v2f uvpos = mTexturePointer->getUVforPosInPixels({ 0.f,0.f });
+			buf[0].setTexUV(uvpos.x, uvpos.y);
+			uvpos = mTexturePointer->getUVforPosInPixels({ 0.f,isize.y - 1.0f });
 			buf[1].setTexUV(uvpos.x, uvpos.y);
 			uvpos = mTexturePointer->getUVforPosInPixels({ isize.x-1.0f,isize.y - 1.0f });
 			buf[3].setTexUV(uvpos.x, uvpos.y);
@@ -76,7 +65,11 @@ void UITexturedItem::SetTexUV(UIVerticesInfo * aQI)
 		}
 		else
 		{
-	
+			kfloat ratioX, ratioY;
+			mTexturePointer->GetRatio(ratioX, ratioY);
+
+			v2f image_size{ isize.x * ratioX, isize.y * ratioY };
+
 			auto set_quad_uv = [&](v2f*& pts, v2f start_pos, v2f size)
 			{
 			

@@ -293,6 +293,22 @@ v2f	TextureHandler::getUVforPosInPixels(const v2f& pos)
 	return result+dx+dy;
 }
 
+
+v2f	TextureHandler::getDrawablePos(const v2f& pos)
+{
+	if (mCurrentFrame)
+	{
+		if (mCurrentFrame->Trimmed)
+		{
+			v2f result(mCurrentFrame->Decal_X + pos.x * mCurrentFrame->FrameSize_X, mCurrentFrame->Decal_Y + pos.y * mCurrentFrame->FrameSize_Y);
+			result*=v2f(1.0f / mCurrentFrame->SourceSize_X, 1.0f / mCurrentFrame->SourceSize_Y);
+			return result;
+		}
+	}
+	return pos;
+}
+
+
 void	TextureHandler::refreshSizeAndUVs(const SpriteSheetFrameData* ssf)
 {
 	float dx = 0.5f * mOneOnPower2Size.x;
