@@ -54,7 +54,7 @@
 #include "UI/UITextInput.h"
 //#include "UI/UITexture.h"
 #include "UI/UITexturedItem.h"
-#include "UI/UIVideo.h"
+//#include "UI/UIVideo.h"
 #include "UI/UINode3DLayer.h"
 #include "UI/UIShapeDisc.h"
 
@@ -127,7 +127,7 @@ void Module2DLayers::Init(KigsCore* core, const kstl::vector<CoreModifiableAttri
 	DECLARE_FULL_CLASS_INFO(core, UITextInput, UITextInput, 2DLayers);
 	//DECLARE_FULL_CLASS_INFO(core, UITexture, UITexture, 2DLayers);
 	DECLARE_FULL_CLASS_INFO(core, UITexturedItem, UITexturedItem, 2DLayers);
-	DECLARE_FULL_CLASS_INFO(core, UIVideo, UIVideo, 2DLayers);
+	//DECLARE_FULL_CLASS_INFO(core, UIVideo, UIVideo, 2DLayers);
 
 	DECLARE_FULL_CLASS_INFO(core, UINode3DLayer, UINode3DLayer, 2DLayers);
 
