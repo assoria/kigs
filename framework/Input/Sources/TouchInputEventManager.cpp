@@ -11,17 +11,7 @@
 
 #include <algorithm>
 
-//#include "imgui.h"
-#ifdef WUP
-extern bool gIsVR;
-#endif
-
-
-
-
-//IMPLEMENT_AND_REGISTER_CLASS_INFO(TouchInputEventManager, TouchInputEventManager, Input);
 IMPLEMENT_CLASS_INFO(TouchInputEventManager)
-
 
 IMPLEMENT_CONSTRUCTOR(TouchInputEventManager)
 , mTheInputModule(0)
@@ -592,9 +582,6 @@ void TouchInputEventManager::Update(const Timer& timer, void* addParam)
 		mouseTouch.posInfos.origin = { 0, 0, 0 };
 		mouseTouch.posInfos.pos = { 0, 0, 0 };
 		mouseTouch.has_position = true;
-
-		mouseTouch.in_touch_support = 0;
-		
 		mouseTouch.touch_state = (force_click || mTheInputModule->GetMouse()->getButtonState(MouseDevice::LEFT) != 0) ? 1 : 0;
 		mouseTouch.touch_state |= (mTheInputModule->GetMouse()->getButtonState(MouseDevice::RIGHT) != 0) ? 2 : 0;
 		mouseTouch.touch_state |= (mTheInputModule->GetMouse()->getButtonState(MouseDevice::MIDDLE) != 0) ? 4 : 0;
@@ -630,7 +617,7 @@ void TouchInputEventManager::Update(const Timer& timer, void* addParam)
 			}
 		}
 	}
-	Interaction* main_interaction = nullptr;
+	std::shared_ptr<Interaction> main_interaction;
 	if (spatial_interaction_device)
 	{
 		auto& interactions = spatial_interaction_device->GetInteractions();
@@ -639,7 +626,7 @@ void TouchInputEventManager::Update(const Timer& timer, void* addParam)
 		{
 			//dd::line(itr.second.Position, itr.second.Position + itr.second.Forward, itr.second.pressed ? v3f{ 0,1,0 } : v3f{ 1,1,1 }, 0.02f);
 			//dd::arrow(itr.second.Position, itr.second.Position + itr.second.Up*0.05f, v3f{ 0,0,1 }, 0.02f);
-			auto& interaction = itr.second;
+			auto& interaction = *itr.second;
 			interaction.current_near_interaction_hit = Hit{};
 
 			if(interaction.allowed)
@@ -651,7 +638,7 @@ void TouchInputEventManager::Update(const Timer& timer, void* addParam)
 				interaction_infos.starting_touch_support = camera;
 				interaction_infos.need_starting_touch_support_transform = false;
 				interaction_infos.posInfos.setHas3DInfos(true);
-				interaction_infos.interaction = &interaction;
+				interaction_infos.interaction = itr.second;
 
 				if (interaction.index_tip.has_value())
 				{
@@ -675,9 +662,32 @@ void TouchInputEventManager::Update(const Timer& timer, void* addParam)
 					{
 						if (interaction.palm.has_value())
 						{
-							interaction_infos.posInfos.pos = interaction.palm->position;
-							interaction_infos.posInfos.dir = ((interaction.palm->position - camera->GetGlobalPosition()).Normalized() + interaction.palm->orientation * v3f(interaction.handedness == Handedness::Left ? -0.15f : 0.15f, 0, 0.33f)).Normalized();
-							interaction_infos.posInfos.origin = interaction.palm->position;
+							auto npos = interaction.palm->position;
+							auto ndir = ((interaction.palm->position - camera->GetGlobalPosition()).Normalized() + interaction.palm->orientation * v3f(interaction.handedness == Handedness::Left ? -0.15f : 0.15f, 0, 0.33f)).Normalized();
+
+							if (interaction.SmoothPosition.x == -FLT_MAX)
+							{
+								interaction.SmoothPosition = npos;
+								interaction.SmoothDirection = ndir;
+							}
+
+							const double max_time_still = 2.0;
+							if (Norm(interaction.SmoothPosition - npos) < 0.01)
+							{
+								interaction.TimeStill = std::min(interaction.TimeStill + interaction.DT, max_time_still);
+							}
+							else
+							{
+								interaction.TimeStill = std::max(interaction.TimeStill - interaction.DT * 2, 0.0);
+							}
+
+							auto t = std::clamp((max_time_still - interaction.TimeStill) / max_time_still, 0.1, 1.0);
+							interaction.SmoothPosition = Lerp(interaction.SmoothPosition, npos, t);
+							interaction.SmoothDirection = Lerp(interaction.SmoothDirection, ndir, t).Normalized();
+
+							interaction_infos.posInfos.pos = interaction.SmoothPosition;
+							interaction_infos.posInfos.dir = interaction.SmoothDirection;
+							interaction_infos.posInfos.origin = interaction.SmoothPosition;
 						}
 						else
 						{
@@ -1061,16 +1071,18 @@ void	TouchInputEventManager::transformTouchesInTouchSupportHierarchy(touchSuppor
 		TouchEventState::TouchInfos cTouchinfosOut = itTouches->second;
 
 		bool isIn=current->mCurrentNode->SimpleCall<bool>("GetDataInTouchSupport", cTouchinfosIn.posInfos, cTouchinfosOut.posInfos);
-		cTouchinfosOut.in_touch_support = isIn ? 1 : 0;
+		cTouchinfosOut.in_touch_support = (isIn ? 1 : 0) & cTouchinfosIn.in_touch_support;
 
 		if (cTouchinfosOut.starting_touch_support && current->mCurrentNode != cTouchinfosOut.starting_touch_support)
 		{
-			cTouchinfosOut.posInfos = itTouches->second.posInfos; // Don't transform until we find starting touch support
+			cTouchinfosOut = itTouches->second; // Don't transform until we find starting touch support
 		}
 		else if(current->mCurrentNode == cTouchinfosOut.starting_touch_support)
 		{
-			if(!itTouches->second.need_starting_touch_support_transform)
-				cTouchinfosOut.posInfos = itTouches->second.posInfos;
+			if (!itTouches->second.need_starting_touch_support_transform)
+			{
+				cTouchinfosOut = itTouches->second;
+			}
 			cTouchinfosOut.starting_touch_support = nullptr;
 		}
 
@@ -1173,8 +1185,10 @@ void TouchEventStateClick::Update(TouchInputEventManager* manager, const Timer& 
 	bool auto_touch_enabled = IsNearInteraction(touch.ID) && manager->GetNearInteractionActiveItems(touch.interaction->handedness).size() > 0 && mSpatialInteractionAutoClickDistance > 0.0;
 	bool is_behind = auto_touch_enabled && dist_from_finger_tip < -2.0f * mSpatialInteractionAutoClickDistance && dist_from_finger_tip != -FLT_MAX;
 
+	bool is_in_touch_support = (touch.in_touch_support & 1) == 1;
+
 	bool is_down = false;
-	if (!swallow)
+	if (!swallow && is_in_touch_support)
 	{
 		if (auto_touch_enabled && ev.hit.HitNode)
 		{
@@ -1400,7 +1414,6 @@ void TouchEventStateClick::Update(TouchInputEventManager* manager, const Timer& 
 
 void TouchEventStateDirectTouch::Update(TouchInputEventManager* manager, const Timer& timer, CoreModifiable* target, const TouchInfos& touch, u32& swallowMask)
 {
-
 	bool swallow = (swallowMask & (1 << mType)) != 0 && (mFlag & IgnoreSwallow) == 0;
 	swallow = swallow || !manager->AllowEventOn(touch.ID, target);
 	
@@ -1425,10 +1438,10 @@ void TouchEventStateDirectTouch::Update(TouchInputEventManager* manager, const T
 	ev.button_state = touch_state;
 	ev.state = StatePossible;
 	ev.touch_state = DirectTouchEvent::TouchHover;
-
+	
+	bool is_in_touch_support = (touch.in_touch_support & 1) == 1;
 	// We need to send StateEnded when the event is swallowed by someone above us
-	bool isHover = !swallow && !is_behind && !touch.touch_ended && target->SimpleCall<bool>(mMethodNameID, ev);
-
+	bool isHover = !swallow && !is_behind && !touch.touch_ended && is_in_touch_support && target->SimpleCall<bool>(mMethodNameID, ev);
 
 	auto foundPrevious = mCurrentInfosMap.find(touch.ID);
 
@@ -1444,7 +1457,7 @@ void TouchEventStateDirectTouch::Update(TouchInputEventManager* manager, const T
 
 		if (dist_from_finger_tip > 0.0)
 		{
-			toAdd.near_touch_last_above_time = timer.GetTime();
+			toAdd.near_touch_last_above_time = timer.GetTime();;
 		}
 
 		mCurrentInfosMap[touch.ID] = toAdd;

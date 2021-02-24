@@ -14,6 +14,7 @@
 #include <winrt/Windows.Media.Devices.h>
 #include <winrt/Windows.Graphics.Imaging.h>
 #include <winrt/Windows.Devices.Enumeration.h>
+#include <winrt/Windows.Storage.Streams.h>
 
 
 #include "winrt_helpers.h"
@@ -211,11 +212,11 @@ winrt::Windows::Foundation::IAsyncAction CameraWUP::InitMediaCaptureAsync()
 
 	if (mUseMRC)
 	{
-		auto effect = MrcVideoEffectDefinition();
-		effect.StreamType(MediaStreamType::VideoPreview);
-		effect.RecordingIndicatorEnabled(false);
+		auto effect = winrt::make_self<MrcVideoEffectDefinition>();
+		effect->StreamType(MediaStreamType::VideoPreview);
+		effect->RecordingIndicatorEnabled(false);
 		//effect.GlobalOpacityCoefficient(1.0f);
-		co_await mMediaCapture.AddVideoEffectAsync(effect, MediaStreamType::VideoPreview);
+		co_await mMediaCapture.AddVideoEffectAsync(*effect, MediaStreamType::VideoPreview);
 	}
 
 	mFrameReader = co_await mMediaCapture.CreateFrameReaderAsync(mFrameSource);

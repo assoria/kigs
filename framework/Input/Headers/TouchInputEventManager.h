@@ -188,14 +188,14 @@ protected:
 		// transformed pos in TouchSupport object
 		touchPosInfos	posInfos;
 
-		TouchSourceID	ID;
-		unsigned short	touch_state;
-		unsigned short	in_touch_support;
+		TouchSourceID	ID = TouchSourceID::Invalid;
+		unsigned short	touch_state = 0;
+		unsigned short	in_touch_support = 1;
 		bool touch_ended = false;
-		bool has_position;
+		bool has_position = false;
 
 		Hit* object_hit = nullptr;
-		Interaction* interaction = nullptr;
+		std::shared_ptr<Interaction> interaction;
 		CoreModifiable* starting_touch_support = nullptr;
 		bool need_starting_touch_support_transform = true;
 	};
@@ -248,7 +248,7 @@ struct InputEvent
 	v3f direction;
 
 	Hit hit;
-	const Interaction* interaction = nullptr;
+	std::shared_ptr<Interaction> interaction;
 
 	// Bitfield of InputEventType
 	u32* swallow_mask;
@@ -746,7 +746,7 @@ protected:
 
 
 	std::vector<StackedEventStateStruct>	mStackedEventState;
-	CoreModifiable*							mEventCaptureObject=nullptr;
+	CoreModifiable*							mEventCaptureObject = nullptr;
 	TouchSourceID							mEventCapturedEventID;
 
 	ModuleInput*	mTheInputModule;

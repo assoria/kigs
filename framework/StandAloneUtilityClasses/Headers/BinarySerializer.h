@@ -96,10 +96,18 @@ inline constexpr u32 bits_required(T min_value, T max_value)
 
 
 #define CHECK_SERIALIZE(a) if(!a) return false;
+#define CHECK_SERIALIZE_VER(ver, a) if(loaded_version >= ver) if(!a) return false;
+#define CO_CHECK_SERIALIZE(a) if(!a) co_return false;
+#define CO_CHECK_SERIALIZE_VER(ver, a) if(loaded_version >= ver) if(!a) co_return false;
+
 
 #define SERIALIZE_VERSION(stream, ver) const u16 current_version = ver;\
 		u16 loaded_version = current_version;\
 		CHECK_SERIALIZE(serialize_object(stream, loaded_version));
+
+#define CO_SERIALIZE_VERSION(stream, ver) const u16 current_version = ver;\
+		u16 loaded_version = current_version;\
+		CO_CHECK_SERIALIZE(serialize_object(stream, loaded_version));
 
 namespace serializer_detail
 {
@@ -667,6 +675,28 @@ struct BasePacketWriteStream
 
 	void* user_data = nullptr;
 };
+
+
+template<typename T>
+std::string SaveToString(T& thing)
+{
+	std::vector<u32> data;
+	VectorWriteStream stream{ data };
+	if (!serialize_object(stream, thing)) return "";
+	stream.Flush();
+	return AsciiParserUtils::BufferToString((unsigned char*)data.data(), data.size() * sizeof(u32));
+}
+
+template<typename T>
+bool LoadFromString(T& thing, const std::string& str)
+{
+	unsigned int size = 0;
+	auto data = AsciiParserUtils::StringToBuffer(str, size);
+	kigs_defer{ delete[] data; };
+	PacketReadStream stream{ data, size };
+	return serialize_object(stream, thing);
+}
+
 
 using PacketWriteStream = BasePacketWriteStream<BitPacker>;
 using VectorWriteStream = BasePacketWriteStream<VectorBitPacker>;

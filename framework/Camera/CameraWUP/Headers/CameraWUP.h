@@ -27,6 +27,7 @@ struct EncoderInfo
 #include <winrt/Windows.Media.Effects.h>
 #include <winrt/Windows.Media.Capture.Frames.h>
 #include <winrt/Windows.System.Display.h>
+#include <winrt/Windows.Foundation.Collections.h>
 
 #include <shared_mutex>
 
