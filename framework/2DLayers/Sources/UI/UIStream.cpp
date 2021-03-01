@@ -97,7 +97,7 @@ void UIStream::Update(const Timer& timer, void* v)
 
 			if(mAutoSize)
 			{
-				mNeedUpdatePosition = true;
+				SetNodeFlag(Node2D_NeedUpdatePosition);
 				mSizeX = size.x;
 				mSizeY = size.y;				
 			}

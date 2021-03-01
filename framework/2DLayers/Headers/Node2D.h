@@ -28,15 +28,16 @@ class Abstract2DLayer;
 class Node2D : public CoreModifiable
 {
 public:
+	// realsize compute mode
 	enum SizeMode
 	{
-		DEFAULT=0,
-		MULTIPLY=1,
-		ADD=2
+		DEFAULT=0,		// use directly the size set in mSizeX or mSizeY
+		MULTIPLY=1,		// multiply father size by mSizeX or mSizeY
+		ADD=2			// add father size to mSizeX or mSizeY
 	};
 
 	friend class ModuleSceneGraph;
-	friend class UIBoxLayout;
+
 	struct PriorityCompare
 	{
 		//! overload operator () for comparison
@@ -125,16 +126,32 @@ public:
 	Abstract2DLayer*									getRootLayerFather() const;
 	Node2D*												getRootFather();
 
-	u32													GetNodeFlags() const { return mFlags; }
-
 	enum Flags
 	{
 		Node2D_SizeChanged = 1u << 0u,
 		Node2D_Clipped = 1u << 1u,
 		Node2D_Hidden = 1u << 2u,
+		Node2D_NeedUpdatePosition = 1u << 3u,
+		Node2D_SonPriorityChanged = 1u << 4u,
 
 		Node2D_PropagatedFlags = Node2D_Clipped | Node2D_Hidden,
 	};
+
+	u32													GetNodeFlags() const { return mFlags; }
+	inline bool												GetNodeFlag(Flags f)
+	{
+		return mFlags & f;
+	}
+	inline void												SetNodeFlag(Flags f)
+	{
+		mFlags |= f;
+	}
+	inline void												ClearNodeFlag(Flags f)
+	{
+		mFlags &= ~(f);
+	}
+
+	
 
 	bool IsHiddenFlag() const { return (mFlags & Node2D_Hidden) != 0; }
 	bool IsInClip(v2f pos) const;
@@ -180,8 +197,8 @@ protected:
 	maEnum<3>											mSizeModeX;
 	maEnum<3>											mSizeModeY;
 	maBoolHeritage<1>									mClipSons;
-	bool												mNeedUpdatePosition;
-	bool												mSonPriorityChanged;
+	//bool												mNeedUpdatePosition;
+	//bool												mSonPriorityChanged;
 	maReference											mCustomShader = BASE_ATTRIBUTE(CustomShader, "");
 
 	WRAP_METHODS(GetSize);

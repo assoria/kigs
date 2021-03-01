@@ -34,9 +34,9 @@ IMPLEMENT_CONSTRUCTOR(Node2D)
 , mSizeModeX(*this, false, "SizeModeX", "Default", "Multiply", "Add")
 , mSizeModeY(*this, false, "SizeModeY", "Default", "Multiply", "Add")
 , mClipSons(*this, false, "ClipSons", false)
-, mNeedUpdatePosition(true)
-, mSonPriorityChanged(false)
 {
+	SetNodeFlag(Node2D_NeedUpdatePosition);
+	SetNodeFlag(Node2D_SizeChanged);
 	mLocalTransformMatrix.SetIdentity();
 	mGlobalTransformMatrix.SetIdentity();
 }
@@ -75,6 +75,9 @@ void Node2D::NotifyUpdate(const unsigned int labelid)
 		(labelid == mSizeModeX.getLabelID()) ||
 		(labelid == mSizeModeY.getLabelID());
 	
+	if (sizechanged)
+		mFlags |= Node2D_SizeChanged;
+
 	if (sizechanged || (labelid == mAnchor.getLabelID()) ||
 		(labelid == mPosition.getLabelID()) ||
 		(labelid == mDock.getLabelID()) ||
@@ -84,25 +87,13 @@ void Node2D::NotifyUpdate(const unsigned int labelid)
 		(labelid == mPostScaleY.getLabelID()) ||
 		(labelid == mRotationAngle.getLabelID()))
 	{
-		mNeedUpdatePosition = true;
-
-		//@TODO investigate if we really want this here
-		if (mSizeModeX == 0 && labelid == mSizeX.getLabelID() && mSizeX >= 0)
-			mRealSize.x = mSizeX;
-
-		if (mSizeModeY == 0 && labelid == mSizeY.getLabelID() && mSizeY >= 0)
-			mRealSize.y = mSizeY;
-
-		if (sizechanged)
-			mFlags |= Node2D_SizeChanged;
-
-		//PropagateNeedUpdateToFather();
+		SetNodeFlag(Node2D_NeedUpdatePosition);
 	}
 	else if (labelid == mPriority.getLabelID())
 	{
 		if (mParent)
 		{
-			mParent->mSonPriorityChanged = true;
+			mParent->SetNodeFlag(Node2D_SonPriorityChanged);
 			if (mParent->isSubType(UILayout::mClassID))
 				static_cast<UILayout*>(mParent)->NeedRecomputeLayout();
 		}
@@ -193,72 +184,67 @@ bool Node2D::Draw(TravState* state)
 
 void Node2D::ComputeRealSize()
 {
+	if (!GetNodeFlag(Node2D_SizeChanged))
+	{
+		return;
+	}
+	
 	Point2D size(mSizeX, mSizeY);
 
-	// size need to be computed
-	if (mSizeModeX != DEFAULT ||
-		mSizeModeY != DEFAULT ||
-		size.x < 0 ||
-		size.y < 0)
+	SizeMode	s_mode[2];
+	s_mode[0] = (SizeMode)(int)mSizeModeX;
+	s_mode[1] = (SizeMode)(int)mSizeModeY;
+
+	// as Node2D needs a parent to be init, fsize shoult always be ok
+	Node2D* father = getFather();
+	Point2D fsize(-1.0f,-1.0f);
+	if (father)
 	{
-		Node2D* father = getFather();
-		Point2D fsize;
-		if (father)
+		fsize = father->mRealSize;
+	}
+	else if (getLayerFather())
+	{
+		float fX, fY;
+	
+		getLayerFather()->GetRenderingScreen()->GetDesignSize(fX, fY);
+
+		fsize.x = (size.x < 0) ? fX : size.x;
+		fsize.y = (size.y < 0) ? fY : size.y;
+	}
+
+	for (int i = 0; i < 1; i++)
+	{
+		// special mode or mSize set to negative value
+		if ((s_mode[i] != DEFAULT) || (size[i] < 0.0f))
 		{
-			fsize = father->mRealSize;
-		}
-		else
-		{
-			float fX, fY;
-			if (getLayerFather())
+			switch ((int)s_mode[i])
 			{
-				getLayerFather()->GetRenderingScreen()->GetDesignSize(fX, fY);
-
-				fsize.x = (size.x < 0) ? fX : size.x;
-				fsize.y = (size.y < 0) ? fY : size.y;
+			case DEFAULT:
+				if (size[i] < 0.0f)
+				{
+					size[i] = fsize[i];
+					if (fsize[i] >= 0.0f)
+					{
+						if (i == 0)
+							mSizeX = size[i];
+						else
+							mSizeY = size[i];
+					}
+				}
+				break;
+			case MULTIPLY:
+				size[i] = size[i] * fsize[i];
+				break;
+			case ADD:
+				size[i] = size[i] + fsize[i];
+				break;
 			}
-		}
-
-
-		switch ((int)mSizeModeX)
-		{
-		case DEFAULT:
-			if (size.x < 0)
-			{
-				size.x = fsize.x;
-				if (size.x >= 0)
-					mSizeX = size.x;
-			}
-			break;
-		case MULTIPLY:
-			size.x = size.x*fsize.x;
-			break;
-		case ADD:
-			size.x = size.x + fsize.x;
-			break;
-		}
-
-
-		switch ((int)mSizeModeY)
-		{
-		case DEFAULT:
-			if (size.y < 0)
-			{
-				size.y = fsize.y;
-				if (size.y >= 0)
-					mSizeY = size.y;
-			}
-			break;
-		case MULTIPLY:
-			size.y = size.y*fsize.y;
-			break;
-		case ADD:
-			size.y = size.y + fsize.y;
-			break;
 		}
 	}
 
 	mRealSize = size;
+
+	ClearNodeFlag(Node2D_SizeChanged);
 }
 
 void Node2D::ComputeMatrices()
@@ -332,7 +318,7 @@ void	Node2D::InitModifiable()
 
 void	Node2D::SetUpNodeIfNeeded()
 {
-	if (mNeedUpdatePosition)
+	if (GetNodeFlag(Node2D_NeedUpdatePosition) || GetNodeFlag(Node2D_SizeChanged))
 	{
 		// if not init, try to init
 		if (!_isInit)
@@ -355,12 +341,12 @@ void	Node2D::SetUpNodeIfNeeded()
 		kstl::set<Node2D*, Node2D::PriorityCompare>::iterator end = mSons.end();
 		for (; it != end; ++it)
 		{
-			(*it)->mNeedUpdatePosition = true;
-			if ((mFlags & Node2D_SizeChanged) != 0)
-				(*it)->mFlags |= Node2D_SizeChanged;
+			(*it)->SetNodeFlag(Node2D_NeedUpdatePosition);
+			if (GetNodeFlag(Node2D_SizeChanged))
+				(*it)->SetNodeFlag(Node2D_SizeChanged);
 		}
-		mFlags &= ~ Node2D_SizeChanged;
-		mNeedUpdatePosition = false;
+		ClearNodeFlag(Node2D_SizeChanged);
+		ClearNodeFlag(Node2D_NeedUpdatePosition);
 	}
 }
 
@@ -415,7 +401,7 @@ void	Node2D::GetTransformedPoints(Point2D * pt)
 
 void	Node2D::ResortSons()
 {
-	if (mSonPriorityChanged)
+	if (GetNodeFlag(Node2D_SonPriorityChanged))
 	{
 		kstl::set<Node2D*, Node2D::PriorityCompare> resortset = mSons;
 
@@ -428,16 +414,16 @@ void	Node2D::ResortSons()
 		{
 			mSons.insert(*it);
 		}
-		mSonPriorityChanged = false;
+		ClearNodeFlag(Node2D_SonPriorityChanged);
 	}
 }
 
 void	Node2D::PropagateNeedUpdateToFather()
 {
-	mNeedUpdatePosition = true;
+	SetNodeFlag(Node2D_NeedUpdatePosition);
 	if (mParent)
 	{
-		if (!mParent->mNeedUpdatePosition)
+		if (!mParent->GetNodeFlag(Node2D_NeedUpdatePosition))
 		{
 			mParent->PropagateNeedUpdateToFather();
 		}
