@@ -31,8 +31,6 @@ IMPLEMENT_CONSTRUCTOR(Node2D)
 , mPreScaleY(*this, false, "PreScaleY", 1)
 , mPostScaleX(*this, false, "PostScaleX", 1)
 , mPostScaleY(*this, false, "PostScaleY", 1)
-, mSizeModeX(*this, false, "SizeModeX", "Default", "Multiply", "Add")
-, mSizeModeY(*this, false, "SizeModeY", "Default", "Multiply", "Add")
 , mClipSons(*this, false, "ClipSons", false)
 {
 	SetNodeFlag(Node2D_NeedUpdatePosition);
@@ -212,7 +210,11 @@ void Node2D::ComputeRealSize()
 		fsize.y = (size.y < 0) ? fY : size.y;
 	}
 
-	for (int i = 0; i < 1; i++)
+	v2f	contentSize = GetContentSize();
+
+	v2f	referenceSize;
+	int keepRatioPass = 0;
+	for (int i = 0; i < 2; i++)
 	{
 		// special mode or mSize set to negative value
 		if ((s_mode[i] != DEFAULT) || (size[i] < 0.0f))
@@ -230,14 +232,51 @@ void Node2D::ComputeRealSize()
 						else
 							mSizeY = size[i];
 					}
+					referenceSize[i] = size[i];
 				}
 				break;
 			case MULTIPLY:
 				size[i] = size[i] * fsize[i];
+				referenceSize[i] = fsize[i];
 				break;
 			case ADD:
 				size[i] = size[i] + fsize[i];
+				referenceSize[i] = fsize[i];
 				break;
+			case CONTENT:
+				size[i] = contentSize[i];
+				referenceSize[i] = contentSize[i];
+				break;
+			case CONTENT_MULTIPLY:
+				size[i] = size[i] * contentSize[i];
+				referenceSize[i] = contentSize[i];
+				break;
+			case CONTENT_ADD:
+				size[i] = size[i] + contentSize[i];
+				referenceSize[i] = contentSize[i];
+				break;
+			case KEEP_RATIO:
+				keepRatioPass++;
+				break;
+			}
+		}
+	}
+
+	if (keepRatioPass)
+	{
+		if (keepRatioPass == 2)
+		{
+			KIGS_ERROR("Node2D KeepRatio set on both size mode", 2);
+		}
+		else
+		{
+			for (int i = 0; i < 2; i++)
+			{
+				// special mode or mSize set to negative value
+				if (s_mode[i] == KEEP_RATIO)
+				{
+					size[i] = referenceSize[i] * size[1 - i] / referenceSize[1 - i];
+				}
 			}
 		}
 	}
@@ -333,7 +372,6 @@ void	Node2D::SetUpNodeIfNeeded()
 		if (father)
 			father->SetUpNodeIfNeeded();
 
-		ComputeMatrices();
 
 		// propagate to sons
 		// propagate recalculation
@@ -345,6 +383,10 @@ void	Node2D::SetUpNodeIfNeeded()
 			if (GetNodeFlag(Node2D_SizeChanged))
 				(*it)->SetNodeFlag(Node2D_SizeChanged);
 		}
+
+		ComputeMatrices();
+
+
 		ClearNodeFlag(Node2D_SizeChanged);
 		ClearNodeFlag(Node2D_NeedUpdatePosition);
 	}

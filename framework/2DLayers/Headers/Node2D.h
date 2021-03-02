@@ -31,9 +31,13 @@ public:
 	// realsize compute mode
 	enum SizeMode
 	{
-		DEFAULT=0,		// use directly the size set in mSizeX or mSizeY
-		MULTIPLY=1,		// multiply father size by mSizeX or mSizeY
-		ADD=2			// add father size to mSizeX or mSizeY
+		DEFAULT=0,					// use directly the size set in mSizeX or mSizeY
+		MULTIPLY=1,					// multiply father size by mSizeX or mSizeY
+		ADD=2,						// add father size to mSizeX or mSizeY
+		CONTENT = 3,				// use content size ( texture size of UIImage )
+		CONTENT_MULTIPLY = 4,		// multiply content size by mSizeX or mSizeY
+		CONTENT_ADD = 5,			// add content size to mSizeX or mSizeY
+		KEEP_RATIO	=6				// compute size x according to size y or size y according to size x. ! Both mode can't be KEEP_RATION ! 
 	};
 
 	friend class ModuleSceneGraph;
@@ -151,12 +155,16 @@ public:
 		mFlags &= ~(f);
 	}
 
-	
-
 	bool IsHiddenFlag() const { return (mFlags & Node2D_Hidden) != 0; }
 	bool IsInClip(v2f pos) const;
 
 protected:
+
+	virtual v2f	GetContentSize()
+	{
+		return mRealSize;
+	}
+
 	/**
 	* \brief	initialize modifiable
 	* \fn 		void InitModifiable() override
@@ -194,8 +202,8 @@ protected:
 	maFloat												mPreScaleY;
 	maFloat												mPostScaleX;
 	maFloat												mPostScaleY;
-	maEnum<3>											mSizeModeX;
-	maEnum<3>											mSizeModeY;
+	maEnum<7>											mSizeModeX = BASE_ATTRIBUTE(SizeModeX, "Default", "Multiply", "Add", "Content","ContentMult","ContentAdd","KeepRatio");
+	maEnum<7>											mSizeModeY = BASE_ATTRIBUTE(SizeModeY, "Default", "Multiply", "Add", "Content", "ContentMult", "ContentAdd", "KeepRatio");
 	maBoolHeritage<1>									mClipSons;
 	//bool												mNeedUpdatePosition;
 	//bool												mSonPriorityChanged;
