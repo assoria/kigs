@@ -76,6 +76,16 @@ public:
 		mChildren.clear();
 	}
 
+	void	clearAllChildren()
+	{
+		size_t i;
+		for (i = 0; i < mChildren.size(); ++i)
+		{
+			delete mChildren.at(i);
+		}
+		mChildren.clear();
+	}
+
 	//! set node type
 	void setType(XMLNodeType type)
 	{
