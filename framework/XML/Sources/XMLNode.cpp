@@ -16,6 +16,24 @@ XMLNodeBase* XMLNodeBase::getChildElement(unsigned int index)
 	return mChildren.at(index);
 }
 
+XMLNodeBase* XMLNodeBase::getChildElementWithAttribute(const std::string& name, const std::string& attrname, const std::string& attrval)
+{
+	for (size_t i = 0; i < mChildren.size(); ++i)
+	{
+		if (mChildren[i]->getName() == name)
+		{
+			auto attr=mChildren[i]->getAttribute(attrname);
+			if (attr && attr->getString() == attrval)
+			{
+				return mChildren[i];
+			}
+		}
+	}
+	return nullptr;
+}
+
+
+
 XMLNodeBase* XMLNodeBase::getChildElement(const std::string& name)
 {
 	unsigned int i;

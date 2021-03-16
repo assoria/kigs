@@ -59,6 +59,8 @@ public:
 
 	}
 
+	virtual XMLNodeBase* Copy() = 0;
+
 	virtual ~XMLNodeBase( )
 	{
 		unsigned int i;
@@ -128,6 +130,9 @@ public:
 	XMLNodeBase* getChildElement(unsigned int index = 0);
 	//! return child node by name
 	XMLNodeBase* getChildElement(const std::string& name);
+
+	XMLNodeBase* getChildElementWithAttribute(const std::string& name,const std::string& attrname,const std::string& attrval);
+
 
 	//! return node's children count
 	int getChildCount()
@@ -250,6 +255,7 @@ class XMLNodeTemplate : public XMLNodeBase
 public:
 	//! constructor
     XMLNodeTemplate( ) : XMLNodeBase() {}
+
 	//! constructor for the given type
     XMLNodeTemplate( XMLNodeType type ) : XMLNodeBase(type) {}
 
@@ -257,6 +263,27 @@ public:
     inline XMLNodeTemplate( XMLNodeType type, const StringType&name );
 	inline XMLNodeTemplate(XMLNodeType type, const char *name);
 	inline XMLNodeTemplate(XMLNodeType type, const char* name,unsigned int strsize);
+
+
+	XMLNodeBase* Copy() override
+	{
+		XMLNodeTemplate<StringType>* newone = new XMLNodeTemplate<StringType>(mType);
+		newone->setName(mName);
+		newone->setString(mValue);
+
+		size_t i;
+
+		for (i = 0; i < mAttributes.size(); ++i)
+		{
+			newone->addAttribute(static_cast<XMLAttributeTemplate<StringType>*>(mAttributes[i]->Copy()));
+		}
+		for (i = 0; i < mChildren.size(); ++i)
+		{
+			newone->addChild(static_cast<XMLNodeTemplate<StringType>*>(mChildren[i]->Copy()));
+		}
+		return newone;
+	}
+
 
 	//! set node name
 	void setName( const StringType& name )
