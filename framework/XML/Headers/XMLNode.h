@@ -71,11 +71,7 @@ public:
 		}
 		mAttributes.clear();
 
-		for (i = 0; i < mChildren.size(); ++i)
-		{
-			delete mChildren.at(i);
-		}
-		mChildren.clear();
+		clearAllChildren();
 	}
 
 	void	clearAllChildren()
@@ -127,11 +123,15 @@ public:
 	virtual void addChild(XMLNodeBase* child)=0;
 
 	//! return child node by index
-	XMLNodeBase* getChildElement(unsigned int index = 0);
-	//! return child node by name
-	XMLNodeBase* getChildElement(const std::string& name);
+	XMLNodeBase*	getChildElement(unsigned int index = 0);
+	void			deleteChildElement(size_t pos);
 
-	XMLNodeBase* getChildElementWithAttribute(const std::string& name,const std::string& attrname,const std::string& attrval);
+	//! return child node by name
+	XMLNodeBase*	getChildElement(const std::string& name);
+	void			deleteChildElement(const std::string& name);
+
+	XMLNodeBase*	getChildElementWithAttribute(const std::string& name,const std::string& attrname,const std::string& attrval);
+	void			deleteChildElementWithAttribute(const std::string& name, const std::string& attrname, const std::string& attrval);
 
 
 	//! return node's children count
