@@ -9,7 +9,7 @@ if(${KIGS_PLATFORM} STREQUAL "Windows")
 	set(CMAKE_SHARED_LINKER_FLAGS_STATICRELEASETOOLS "${CMAKE_SHARED_LINKER_FLAGS_STATICRELEASETOOLS} /SUBSYSTEM:CONSOLE /DEBUG:FULL /SAFESEH:NO")
 endif()
 
-target_link_libraries(AssetManager PRIVATE BaseApplication)
+target_link_libraries(AssetManager PRIVATE BaseApplication Thread)
 target_include_directories(AssetManager PRIVATE "Headers")
 
 file(GLOB_RECURSE all_sources "Sources/*.cpp")
