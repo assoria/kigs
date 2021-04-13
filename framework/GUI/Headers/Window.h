@@ -77,6 +77,10 @@ public:
 
 	virtual void ChangeWindowText(const char * txt){}
 
+	virtual bool IsPlatformClipboardSupported() { return false; }
+	virtual const std::string& GetClipboardText() { return mClipboard; };
+	virtual void SetClipboardText(const std::string& txt) { mClipboard = txt; };
+
 protected:
 	//! destructor
     virtual ~Window();
@@ -100,6 +104,8 @@ protected:
 
 	maBool mDirtySize;
 
+	maBool mShow = BASE_ATTRIBUTE(Show, true);
+
 	//! window size and position on screen (size is also used if fullscreen)
     maInt     mPositionX,mPositionY,mSizeX,mSizeY;
 
@@ -115,6 +121,8 @@ protected:
 	KeyDownCallbackFn mKeyDownCallback,mKeyUpCallback;
 	//! destroy callback
 	DestroyCallbackFn mDestroyCallback;
+
+	std::string mClipboard;
 };    
 
 #endif

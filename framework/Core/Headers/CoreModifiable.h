@@ -14,6 +14,7 @@
 #include <set>
 #include <variant>
 #include <list>
+#include <any>
 
 #ifdef KEEP_XML_DOCUMENT
 #include "XML.h"
@@ -80,7 +81,7 @@ struct ExportSettings
 	std::set<std::string> external_files_exported;
 	std::string current_xml_file;
 	std::vector<std::string> current_unique_id_path;
-
+	std::string working_directory;
 	size_t export_buffer_attribute_as_external_file_size_threshold = 0;
 
 #ifdef KEEP_XML_DOCUMENT
@@ -805,6 +806,9 @@ public:
 		getValue(id, val);
 		return val;
 	}
+
+	template<typename T>
+	T* getAny(const KigsID id);
 
 	template<typename T>
 	void setValueRecursively(KigsID id, T&& value)
@@ -1596,5 +1600,21 @@ inline CoreAttributeAndMethodForwardSmartPointer<smartPointOn>::CoreAttributeAnd
 	mNextItem = parent->InsertForwardPtr(this);
 }
 
-
+#ifdef WUP
+template<typename T>
+T* CoreModifiable::getAny(const KigsID id)
+{
+	auto attr = getAttribute(id);
+	if (!attr)
+	{
+		attr = AddDynamicAttribute(CoreModifiable::ATTRIBUTE_TYPE::ANY, id);
+		static_cast<maAny*>(attr)->ref() = T{};
+	}
+	if (attr && attr->getType() == CoreModifiable::ATTRIBUTE_TYPE::ANY)
+	{
+		return static_cast<maAny*>(attr)->getAny<T>();
+	}
+	return nullptr;
+}
+#endif
 #endif

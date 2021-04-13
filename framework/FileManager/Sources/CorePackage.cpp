@@ -329,7 +329,7 @@ void	CorePackage::AddFolder(const kstl::string& foldername, const kstl::string& 
 #endif
 }
 
-void	CorePackage::Export(const kstl::string& filename)
+void	CorePackage::Export(const kstl::string& filename, const std::string& working_directory)
 {
 
 	if (!mPackageBuilderStruct)
@@ -338,7 +338,7 @@ void	CorePackage::Export(const kstl::string& filename)
 		return;
 	}
 	
-
+	mPackageBuilderStruct->working_directory = working_directory;
 	PackageCreationStruct::FileTreeNode filetree=mPackageBuilderStruct->getFileTree();
 
 	// compute FAT size
@@ -383,13 +383,20 @@ void	CorePackage::Export(const kstl::string& filename)
 }
 
 
-kstl::vector<kstl::string> RetreivePath(kstl::string filename, kstl::string& shortfilename)
+kstl::vector<kstl::string> RetreivePath(kstl::string filename, kstl::string& shortfilename, const std::string& working_directory="")
 {
 	kstl::vector<kstl::string>	folders;
-
 	replaceAll(filename, "\\", "/");
-
 	kstl::string	remaining = filename;
+
+	if (working_directory.size())
+	{
+		auto pos = remaining.find(working_directory);
+		if (pos != std::string::npos)
+		{
+			remaining = remaining.substr(pos + working_directory.size());
+		}
+	}
 
 	bool finish = false;
 	while (!finish)
@@ -831,7 +838,11 @@ void	CorePackage::PackageCreationStruct::FillFATExportedStruct(const FileTreeNod
 
 			currentOffset += filesize + padFileSize;
 		}
-
+		else
+		{
+			std::string err = node.mFileNames->mPhysicalName + " not found when exporting package";
+			kigsprintf(err.c_str());
+		}
 	}
 
 
@@ -876,12 +887,14 @@ CorePackage::PackageCreationStruct::FileTreeNode	CorePackage::PackageCreationStr
 	root.mFileNames = 0;
 	root.mName = ""; 
 
+	replaceAll(working_directory, "\\", "/");
+
 	kstl::vector<fileNames>::iterator	it;
 	for (it = mFileList.begin(); it != mFileList.end(); ++it)
 	{
-		kstl::string	fileInPackage = (*it).mPackageName;
-		kstl::string    shortfilename = "";
-		kstl::vector<kstl::string> path=RetreivePath(fileInPackage, shortfilename);
+		kstl::string fileInPackage = (*it).mPackageName;
+		kstl::string shortfilename = "";
+		kstl::vector<kstl::string> path=RetreivePath(fileInPackage, shortfilename, working_directory);
 
 		FileTreeNode* currentFileTreeNode = &root;
 

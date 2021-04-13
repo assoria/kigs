@@ -72,7 +72,34 @@ void	WindowWin32::RemoveCallback(msgProcCallBack callback)
 }
 
 
+const std::string& WindowWin32::GetClipboardText()
+{
+	if (OpenClipboard(nullptr))
+	{
+		HANDLE hData = GetClipboardData(CF_UNICODETEXT);
+		wchar_t* pszText = static_cast<wchar_t*>(GlobalLock(hData));
+		mClipboard = to_utf8(pszText);
+		GlobalUnlock(hData);
+		CloseClipboard();
+	}
+	return mClipboard;
+}
 
+void WindowWin32::SetClipboardText(const std::string& txt)
+{
+	if (OpenClipboard(nullptr))
+	{
+		auto wtxt = to_wchar(txt);
+		auto len = (wtxt.size() + 1) * sizeof(wchar_t);
+		auto hMem = GlobalAlloc(GMEM_MOVEABLE, len);
+		auto str_ptr = GlobalLock(hMem);
+		memcpy(str_ptr, wtxt.data(), len);
+		GlobalUnlock(hMem);
+		EmptyClipboard();
+		SetClipboardData(CF_UNICODETEXT, hMem);
+		CloseClipboard();
+	}
+}
 
 //! manage some messages (destroy and resize)
 LRESULT WINAPI WindowWin32::MsgProc(HWND hWnd, ::UINT msg, WPARAM wParam, LPARAM lParam)
@@ -82,11 +109,21 @@ LRESULT WINAPI WindowWin32::MsgProc(HWND hWnd, ::UINT msg, WPARAM wParam, LPARAM
 	WindowWin32 *pWindow = (WindowWin32*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
 	switch (msg)
 	{
+	case WM_CHAR:
+	{
+		if (wParam > 0 && wParam < 0x10000)
+		{
+			auto utf16_char = (unsigned short)wParam;
+			pWindow->EmitSignal("WM_CHAR", utf16_char);
+		}	
+		messageTreated = true;
+	}
+	break;
 		// lose focus / reset click position
 	case WM_KILLFOCUS:
 	{
 		bool IsMainWnd;
-		pWindow->getValue(LABEL_TO_ID(IsMainWindow), IsMainWnd);
+		pWindow->getValue("IsMainWindow", IsMainWnd);
 		if (IsMainWnd)
 		{
 			if (KigsCore::GetCoreApplication())
@@ -98,7 +135,7 @@ LRESULT WINAPI WindowWin32::MsgProc(HWND hWnd, ::UINT msg, WPARAM wParam, LPARAM
 	case WM_SETFOCUS:
 	{
 		bool IsMainWnd = true;
-		pWindow->getValue(LABEL_TO_ID(IsMainWindow), IsMainWnd);
+		pWindow->getValue("IsMainWindow", IsMainWnd);
 		if (IsMainWnd)
 		{
 			CoreBaseApplication* app = KigsCore::GetCoreApplication();
@@ -245,7 +282,7 @@ LRESULT WINAPI WindowWin32::MsgProc(HWND hWnd, ::UINT msg, WPARAM wParam, LPARAM
 	case WM_DESTROY:
 	{
 		bool IsMainWnd;
-		pWindow->getValue(LABEL_TO_ID(IsMainWindow), IsMainWnd);
+		pWindow->getValue("IsMainWindow", IsMainWnd);
 		if (IsMainWnd)
 		{
 			if (KigsCore::GetCoreApplication())
@@ -272,7 +309,7 @@ LRESULT WINAPI WindowWin32::MsgProc(HWND hWnd, ::UINT msg, WPARAM wParam, LPARAM
 		ClientToScreen(hWnd, &p);
 		WindowWin32::MoveWindow(hWnd, p.x, p.y);*/
 
-		pWindow->setValue(LABEL_TO_ID(DirtySize),true);
+		pWindow->setValue("DirtySize",true);
 		return 0;
 	}
 
@@ -547,11 +584,12 @@ void  WindowWin32::Show()
 		SetWindowPos(hWnd, HWND_TOP, rcClient.left, rcClient.top, rcClient.right - rcClient.left, rcClient.bottom - rcClient.top, SWP_NOCOPYBITS);
 	}
 #endif
-
-	// Show the window
-	ShowWindow(hWnd, SW_SHOWDEFAULT);
-	UpdateWindow(hWnd);
-
+	if (mShow)
+	{
+		// Show the window
+		ShowWindow(hWnd, SW_SHOWDEFAULT);
+		UpdateWindow(hWnd);
+	}
 	if (mScreen && !mScreen->IsInit())
 	{
 		mScreen->setValue(LABEL_TO_ID(ParentWindowName), getName());

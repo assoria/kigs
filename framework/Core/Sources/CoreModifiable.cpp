@@ -925,7 +925,6 @@ EXPAND_MACRO_FOR_EXTRA_TYPES(NOQUALIFIER, &, IMPLEMENT_GET_VALUE);
 EXPAND_MACRO_FOR_EXTRA_TYPES(NOQUALIFIER, NOQUALIFIER, IMPLEMENT_SET_VALUE);
 
 
-
 ////////////////////////////////////////////////////////////////////////////
 
 //! macro implementing body of get/set values for array
@@ -1531,6 +1530,11 @@ CoreModifiableAttribute*	CoreModifiable::GenericCreateDynamicAttribute(CoreModif
 			toadd = new maRawPtr(*this, false, ID);
 		}
 		break;
+		case  CoreModifiable::ATTRIBUTE_TYPE::ANY:
+		{
+			toadd = new maAny(*this, false, ID);
+		}
+		break;
 		case CoreModifiable::ATTRIBUTE_TYPE::ARRAY:
 		{
 			
@@ -1974,19 +1978,29 @@ void	CoreModifiable::Export(const std::string &filename,CoreModifiable* toexport
 	if (settings) settings->current_xml_file_node = xmlfile.get();
 #endif
 
+	if (settings)
+	{
+		if(settings->working_directory.size() && settings->working_directory.back() != '/')
+			settings->working_directory.push_back('/');
+	}
+
 	//! call recursive, non static method
 	toexport->Export(savedList, modifiableNode, recursive, settings ? settings : &default_settings);
 	
 	xmlfile->setRoot(modifiableNode);
 	
-	xmlfile->WriteFile(filename);
+	auto xmlpath = filename;
+	if (settings)
+		xmlpath = settings->working_directory + xmlpath;
+
+	xmlfile->WriteFile(xmlpath);
 
 	if (settings)
 	{
 #ifdef KIGS_TOOLS
 		if (settings->current_package)
 		{
-			settings->current_package->AddFile(filename, filename);
+			settings->current_package->AddFile(xmlpath, filename);
 		}
 #endif
 	}
@@ -2328,18 +2342,19 @@ void	CoreModifiable::Export(std::vector<CoreModifiable*>& savedList, XMLNode * c
 						attribute = new XMLAttribute("V", "#" + path);
 						modifiableAttrNode->addAttribute(attribute);
 						export_inline = false;
+						auto filepath = settings->working_directory + path;
 						if (compressManager)
 						{
 							auto result = OwningRawPtrToSmartPtr(new CoreRawBuffer);
 							compressManager->SimpleCall("CompressData", buffer, result.get());
-							ModuleFileManager::SaveFile(path.c_str(), (u8*)result->data(), result->size());
+							ModuleFileManager::SaveFile(filepath.c_str(), (u8*)result->data(), result->size());
 						}
 						else
 						{
-							ModuleFileManager::SaveFile(path.c_str(), (u8*)buffer->data(), buffer->length());
+							ModuleFileManager::SaveFile(filepath.c_str(), (u8*)buffer->data(), buffer->length());
 						}
 						if (settings->current_package)
-							settings->current_package->AddFile(path, path);
+							settings->current_package->AddFile(filepath, path);
 					}
 				}
 				

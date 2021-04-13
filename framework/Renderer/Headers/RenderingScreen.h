@@ -156,6 +156,8 @@ public:
 
 	COREMODIFIABLE_METHODS(ResetContext);
 
+	Window* GetParentWindow() const { return mParentWindow; };
+
 protected:
 	// recompute mDesignCoefX,mDesignCoefY;
 	void	InitModifiable() override;
@@ -199,6 +201,8 @@ protected:
 	maBool mNeedDoubleBuffer;
 
 	maBool mIsStereo = BASE_ATTRIBUTE(IsStereo, false);
+	
+	maBool mResizeDesignSize = BASE_ATTRIBUTE(ResizeDesignSize, false);
 
 	Window* mParentWindow;
 
