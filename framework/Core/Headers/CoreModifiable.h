@@ -203,7 +203,7 @@ public:
 		return mAddressAndType;
 	}
 
-	LazyContentLinkedListItemStruct::ItemType	getType()
+	LazyContentLinkedListItemStruct::ItemType	getType() const
 	{
 		return (LazyContentLinkedListItemStruct::ItemType)(mAddressAndType & 3);
 	}
@@ -215,7 +215,7 @@ protected:
 
 	LazyContentLinkedListItemStruct mNextItem = 0; // store address + type 
 public:
-	StructLinkedListBase* getNext(const LazyContentLinkedListItemStruct::ItemType searchtype)
+	StructLinkedListBase* getNext(const LazyContentLinkedListItemStruct::ItemType searchtype) const
 	{
 		LazyContentLinkedListItemStruct next = mNextItem;
 		while ((uintptr_t)next)
@@ -230,7 +230,7 @@ public:
 		return nullptr;
 	}
 
-	LazyContentLinkedListItemStruct getNext()
+	LazyContentLinkedListItemStruct getNext() const
 	{
 		return mNextItem;
 	}
@@ -1432,7 +1432,7 @@ struct LazyContent
 	StructLinkedListBase* GetLinkedListItem(const LazyContentLinkedListItemStruct::ItemType	searchType)
 	{
 		LazyContentLinkedListItemStruct current = mLinkedListItem;
-		while (current)
+		while ((uintptr_t)current)
 		{
 			if (current.getType() == searchType)
 			{

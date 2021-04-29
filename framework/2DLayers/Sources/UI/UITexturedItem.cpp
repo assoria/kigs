@@ -18,7 +18,15 @@ IMPLEMENT_CONSTRUCTOR(UITexturedItem)
 	// create empty Textured Item
 	mTexturePointer = KigsCore::GetInstanceOf(getName()+"_TextureHandler", "TextureHandler");
 	mTexturePointer->Init();
-
+	bool is_bgr = false;
+	if (mTexturePointer->getValue("IsBGR", is_bgr) && is_bgr)
+	{
+		SetNodeFlag(Node2D_hasBGRTexture);
+	}
+	else
+	{
+		ClearNodeFlag(Node2D_hasBGRTexture);
+	}
 	KigsCore::Connect(mTexturePointer.get(), "NotifyUpdate", this , "TextureNotifyUpdate");
 }
 
@@ -33,8 +41,7 @@ void UITexturedItem::SetTexUV(UIVerticesInfo * aQI)
 		}
 		aQI->Flag |= UIVerticesInfo_Texture;
 
-		bool is_bgr = false;
-		if (mTexturePointer->getValue("IsBGR", is_bgr) && is_bgr)
+		if(GetNodeFlag(Node2D_hasBGRTexture))
 		{
 			aQI->Flag |= UIVerticesInfo_BGRTexture;
 		}
@@ -176,5 +183,15 @@ void	UITexturedItem::TextureNotifyUpdate(const unsigned int  labelid)
 	if (labelid == KigsID("TextureName"))
 	{
 		SetNodeFlag(Node2D_SizeChanged);
+
+		bool is_bgr = false;
+		if (mTexturePointer->getValue("IsBGR", is_bgr) && is_bgr)
+		{
+			SetNodeFlag(Node2D_hasBGRTexture);
+		}
+		else
+		{
+			ClearNodeFlag(Node2D_hasBGRTexture);
+		}
 	}
 }

@@ -161,11 +161,12 @@ void BaseUI2DLayer::SortItemsFrontToBack(SortItemsFrontToBackParam& param)
 
 void BaseUI2DLayer::AccumulateToDraw(TravState* state, kstl::vector<NodeToDraw>& todraw, CoreModifiable* current, int depth, u32 clip_count)
 {
-	bool clipper;
-	if (current->getValue("ClipSons", clipper))
+	if (current->isSubType(Node2D::mClassID))
 	{
-		if (clipper)
+		if (static_cast<Node2D*>(current)->GetNodeFlag(Node2D::Node2D_ClipSons))
+		{
 			++clip_count;
+		}
 	}
 	
 	for (auto& item_struct : current->getItems())
@@ -312,8 +313,7 @@ void BaseUI2DLayer::TravDraw(TravState* state)
 
 				while (father && current_stencil_stack.size() < item.clip_count)
 				{
-					bool clip;
-					if (father->getValue("ClipSons", clip) && clip)
+					if (father->GetNodeFlag(Node2D::Node2D_ClipSons))
 					{
 						current_stencil_stack.push_back(father);
 					}
@@ -363,7 +363,11 @@ void BaseUI2DLayer::TravDraw(TravState* state)
 
 			renderer->SetStencilOp(RendererCullMode::RENDERER_CULL_FRONT_AND_BACK, RENDERER_STENCIL_OP_KEEP, RENDERER_STENCIL_OP_KEEP, RENDERER_STENCIL_OP_KEEP);
 
-			auto shader = item.node->getValue<CoreModifiable*>("CustomShader")->as<ShaderBase>();
+			ShaderBase* shader = nullptr;
+			if (item.node->GetNodeFlag(Node2D::Node2D_UseCustomShader))
+			{
+				shader = item.node->getValue<CoreModifiable*>("CustomShader")->as<ShaderBase>();
+			}
 			if (shader != current_custom_shader)
 			{
 				if (current_custom_shader)
@@ -374,7 +378,6 @@ void BaseUI2DLayer::TravDraw(TravState* state)
 
 				current_custom_shader = shader;
 			}
-
 			item.node->ProtectedDraw(state);
 		}
 		if (current_custom_shader)

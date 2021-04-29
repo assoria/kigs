@@ -1423,9 +1423,9 @@ void VertexBufferManager::SetVertexAttrib(unsigned int bufferName, unsigned int 
 	glEnableVertexAttribArray(locs->attribs[attribID]); CHECK_GLERROR;
 	glVertexAttribPointer(locs->attribs[attribID], size, type, normalized, stride, offset); CHECK_GLERROR;
 
-
-	mEnableVertexAttrib[locs->attribs[attribID]].mBufferName= bufferName;
-	mEnableVertexAttrib[locs->attribs[attribID]].mUsed = 1;
+	VAStruct& str = mEnableVertexAttrib[locs->attribs[attribID]];
+	str.mBufferName= bufferName;
+	str.mUsed = 1;
 }
 
 void VertexBufferManager::BufferData(unsigned int bufferName, unsigned int bufferType, int size, void* data, unsigned int usage)
