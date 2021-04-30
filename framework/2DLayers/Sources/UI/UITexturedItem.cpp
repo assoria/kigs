@@ -19,14 +19,9 @@ IMPLEMENT_CONSTRUCTOR(UITexturedItem)
 	mTexturePointer = KigsCore::GetInstanceOf(getName()+"_TextureHandler", "TextureHandler");
 	mTexturePointer->Init();
 	bool is_bgr = false;
-	if (mTexturePointer->getValue("IsBGR", is_bgr) && is_bgr)
-	{
-		SetNodeFlag(Node2D_hasBGRTexture);
-	}
-	else
-	{
-		ClearNodeFlag(Node2D_hasBGRTexture);
-	}
+	mTexturePointer->getValue("IsBGR", is_bgr);
+	ChangeNodeFlag(Node2D_hasBGRTexture, is_bgr);
+
 	KigsCore::Connect(mTexturePointer.get(), "NotifyUpdate", this , "TextureNotifyUpdate");
 }
 
@@ -185,13 +180,9 @@ void	UITexturedItem::TextureNotifyUpdate(const unsigned int  labelid)
 		SetNodeFlag(Node2D_SizeChanged);
 
 		bool is_bgr = false;
-		if (mTexturePointer->getValue("IsBGR", is_bgr) && is_bgr)
-		{
-			SetNodeFlag(Node2D_hasBGRTexture);
-		}
-		else
-		{
-			ClearNodeFlag(Node2D_hasBGRTexture);
-		}
+		mTexturePointer->getValue("IsBGR", is_bgr);
+		
+		ChangeNodeFlag(Node2D_hasBGRTexture, is_bgr);
+		
 	}
 }

@@ -63,15 +63,7 @@ void Node2D::NotifyUpdate(const unsigned int labelid)
 {
 	if (labelid == mClipSons.getID())
 	{
-		if (mClipSons)
-		{
-			SetNodeFlag(Node2D_ClipSons);
-		}
-		else
-		{
-			ClearNodeFlag(Node2D_ClipSons);
-		}
-
+		ChangeNodeFlag(Node2D_ClipSons,mClipSons);
 		PropagateNodeFlags();
 	}
 	
@@ -105,14 +97,7 @@ void Node2D::NotifyUpdate(const unsigned int labelid)
 	}
 	else if (labelid == mCustomShader.getLabelID())
 	{
-		if ((std::string)mCustomShader != "")
-		{
-			SetNodeFlag(Node2D_UseCustomShader);
-		}
-		else
-		{
-			ClearNodeFlag(Node2D_UseCustomShader);
-		}
+		ChangeNodeFlag(Node2D_UseCustomShader, ((std::string)mCustomShader != ""));
 	}
 	CoreModifiable::NotifyUpdate(labelid);
 }
@@ -383,26 +368,12 @@ void	Node2D::InitModifiable()
 		mRotationAngle.changeNotificationLevel(Owner);
 		mClipSons.changeNotificationLevel(Owner);
 
-		if (mClipSons)
-		{
-			SetNodeFlag(Node2D_ClipSons);
-		}
-		else
-		{
-			ClearNodeFlag(Node2D_ClipSons);
-		}
+		ChangeNodeFlag(Node2D_ClipSons, mClipSons);
 
 		// call me if custom shader is set
 		mCustomShader.changeNotificationLevel(Owner);
 		
-		if ((std::string)mCustomShader != "")
-		{
-			SetNodeFlag(Node2D_UseCustomShader);
-		}
-		else
-		{
-			ClearNodeFlag(Node2D_UseCustomShader);
-		}
+		ChangeNodeFlag(Node2D_UseCustomShader, ((std::string)mCustomShader != ""));
 
 		CoreModifiable::InitModifiable();
 	}

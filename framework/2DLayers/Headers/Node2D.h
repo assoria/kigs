@@ -144,7 +144,8 @@ public:
 		Node2D_PropagatedFlags = Node2D_Clipped | Node2D_Hidden,
 	};
 
-	u32													GetNodeFlags() const { return mFlags; }
+	u32														GetNodeFlags() const { return mFlags; }
+
 	inline bool												GetNodeFlag(Flags f)
 	{
 		return mFlags & f;
@@ -156,6 +157,18 @@ public:
 	inline void												ClearNodeFlag(Flags f)
 	{
 		mFlags &= ~(f);
+	}
+
+	inline void												ChangeNodeFlag(Flags f,bool set)
+	{
+		if (set)
+		{
+			SetNodeFlag(f);
+		}
+		else
+		{
+			ClearNodeFlag(f);
+		}
 	}
 
 	bool IsHiddenFlag() const { return (mFlags & Node2D_Hidden) != 0; }
