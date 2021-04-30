@@ -49,7 +49,6 @@ void UITexturedItem::SetTexUV(UIVerticesInfo * aQI)
 		v2f isize;
 		mTexturePointer->GetSize(isize.x, isize.y);
 
-	
 		VInfo2D::Data* buf = reinterpret_cast<VInfo2D::Data*>(aQI->Buffer());
 
 		auto slice_size = (v2f)mSliced;
@@ -58,23 +57,17 @@ void UITexturedItem::SetTexUV(UIVerticesInfo * aQI)
 			// triangle strip order
 			v2f uvpos = mTexturePointer->getUVforPosInPixels({ 0.f,0.f });
 			buf[0].setTexUV(uvpos.x, uvpos.y);
-			uvpos = mTexturePointer->getUVforPosInPixels({ 0.f,isize.y - 1.0f });
+			uvpos = mTexturePointer->getUVforPosInPixels({ 0.f,isize.y});
 			buf[1].setTexUV(uvpos.x, uvpos.y);
-			uvpos = mTexturePointer->getUVforPosInPixels({ isize.x-1.0f,isize.y - 1.0f });
+			uvpos = mTexturePointer->getUVforPosInPixels({ isize.x,isize.y});
 			buf[3].setTexUV(uvpos.x, uvpos.y);
-			uvpos = mTexturePointer->getUVforPosInPixels({ isize.x - 1.0f,0.0f });
+			uvpos = mTexturePointer->getUVforPosInPixels({ isize.x,0.0f });
 			buf[2].setTexUV(uvpos.x, uvpos.y);
 		}
 		else
 		{
-			kfloat ratioX, ratioY;
-			mTexturePointer->GetRatio(ratioX, ratioY);
-
-			v2f image_size{ isize.x * ratioX, isize.y * ratioY };
-
 			auto set_quad_uv = [&](v2f*& pts, v2f start_pos, v2f size)
 			{
-			
 				v2f uvpos = mTexturePointer->getUVforPosInPixels(start_pos);
 				pts[0] = uvpos;
 				uvpos = mTexturePointer->getUVforPosInPixels({ start_pos.x,start_pos.y + size.y });
@@ -94,22 +87,22 @@ void UITexturedItem::SetTexUV(UIVerticesInfo * aQI)
 			
 			// Top Left
 			set_quad_uv(current_uv, v2f(0, 0), slice_size);
-			// Top Right
-			set_quad_uv(current_uv, v2f(image_size.x - slice_size.x, 0), slice_size);
-			// Bottom Left
-			set_quad_uv(current_uv, v2f(0, image_size.y - slice_size.y), slice_size);
-			// Bottom Right
-			set_quad_uv(current_uv, v2f(image_size.x - slice_size.x, image_size.y - slice_size.y), slice_size);
-			// Center
-			set_quad_uv(current_uv, v2f(slice_size.x, slice_size.y), image_size - slice_size * 2);
 			// Top
-			set_quad_uv(current_uv, v2f(slice_size.x, 0), v2f((image_size - slice_size * 2).x, slice_size.y));
-			// Bottom
-			set_quad_uv(current_uv, v2f(slice_size.x, image_size.y - slice_size.y), v2f((image_size - slice_size * 2).x, slice_size.y));
+			set_quad_uv(current_uv, v2f(slice_size.x, 0), v2f((isize.x - slice_size.x * 2.0f), slice_size.y));
+			// Top Right
+			set_quad_uv(current_uv, v2f(isize.x - slice_size.x, 0), slice_size);
 			// Left
-			set_quad_uv(current_uv, v2f(0, slice_size.y), v2f(slice_size.x, (image_size - slice_size * 2).y));
+			set_quad_uv(current_uv, v2f(0, slice_size.y), v2f(slice_size.x, (isize.y - slice_size.y * 2.0f)));
+			// Center
+			set_quad_uv(current_uv, v2f(slice_size.x, slice_size.y), isize - slice_size * 2.0f);
 			// Right
-			set_quad_uv(current_uv, v2f(image_size.x - slice_size.x, slice_size.y), v2f(slice_size.x, (image_size - slice_size * 2).y));
+			set_quad_uv(current_uv, v2f(isize.x - slice_size.x, slice_size.y), v2f(slice_size.x, isize.y - slice_size.y * 2.0f));
+			// Bottom Left
+			set_quad_uv(current_uv, v2f(0, isize.y - slice_size.y), slice_size);
+			// Bottom
+			set_quad_uv(current_uv, v2f(slice_size.x, isize.y - slice_size.y), v2f(isize.x - slice_size.x * 2.0f, slice_size.y));
+			// Bottom Right
+			set_quad_uv(current_uv, v2f(isize.x - slice_size.x, isize.y - slice_size.y), slice_size);
 
 			for (int i = 0; i < 6 * 9; ++i)
 				buf[i].setTexUV(uvs[i]);

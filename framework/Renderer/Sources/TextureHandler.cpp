@@ -314,15 +314,13 @@ v2f	TextureHandler::getDrawablePos(const v2f& pos)
 
 void	TextureHandler::refreshSizeAndUVs(const SpriteSheetFrameData* ssf)
 {
-	float dx = 0.5f * mOneOnPower2Size.x;
-	float dy = 0.5f * mOneOnPower2Size.y;
 
-	mUVStart.Set(dx, dy);
+	mUVStart.Set(0.0f, 0.0f);
 
 	if (ssf)
 	{
-		mUVStart.x = (ssf->FramePos_X + 0.5f) * mOneOnPower2Size.x;
-		mUVStart.y = (ssf->FramePos_Y + 0.5f) * mOneOnPower2Size.y;
+		mUVStart.x = (ssf->FramePos_X) * mOneOnPower2Size.x;
+		mUVStart.y = (ssf->FramePos_Y) * mOneOnPower2Size.y;
 		if (ssf->Rotated)
 		{
 			mUVector.Set(0.0f, 1.0f);
