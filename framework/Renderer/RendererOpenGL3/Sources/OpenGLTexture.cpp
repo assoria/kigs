@@ -242,6 +242,9 @@ bool	OpenGLTexture::PreDraw(TravState* travstate)
 		renderer->TextureParameteri(type, RENDERER_TEXTURE_WRAP_T, (mRepeat_V) ? RENDERER_REPEAT : RENDERER_CLAMP_TO_EDGE);
 		renderer->TextureParameteri(type, RENDERER_TEXTURE_MIN_FILTER, mForceNearest ? RENDERER_NEAREST : ((mHasMipmap) ? RENDERER_LINEAR_MIPMAP_LINEAR : RENDERER_LINEAR));
 		
+		// Is it a problem to have RENDERER_TEXTURE_MAG_FILTER set too ? 
+		renderer->TextureParameteri(type, RENDERER_TEXTURE_MAG_FILTER, mForceNearest ? RENDERER_NEAREST : ((mHasMipmap) ? RENDERER_LINEAR_MIPMAP_LINEAR : RENDERER_LINEAR));
+
 		return true;
 	}
 	return false;
