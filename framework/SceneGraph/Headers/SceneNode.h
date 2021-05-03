@@ -34,6 +34,17 @@ public:
 	bool IsInScene() const;
 
 	inline bool HasFlag(unsigned int flag) const { return ((flag&mFlags) == flag); }
+	inline void ChangeFlag(unsigned int flag, bool setit)
+	{
+		if (setit)
+		{
+			SetFlag(flag);
+		}
+		else
+		{
+			UnsetFlag(flag);
+		}
+	}
 	inline void SetFlag(unsigned int flag) { mFlags |= flag; }
 	inline void UnsetFlag(unsigned int flag) { mFlags &= ~flag; }
 

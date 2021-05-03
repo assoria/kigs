@@ -23,24 +23,19 @@ void UIShapeDisc::SetTexUV(UIItem* item, UIVerticesInfo* aQI)
 	VInfo2D::Data* buf = reinterpret_cast<VInfo2D::Data*>(aQI->Buffer());
 	UITexturedItem* texturedLocalThis = static_cast<UITexturedItem*>(item);
 
-	v2f isize;
-	texturedLocalThis->GetTexture()->GetSize(isize.x, isize.y);
-	v2f center = isize * 0.5f;
+	v2f center(0.5f,0.5f);
 
 	std::vector<v2f>	circlePos;
 	circlePos.resize(sliceCount + 1);
 
 	float angle = (2.0 * PI) / ((double)sliceCount);
 	circlePos[0] = center;
-	circlePos[0] = texturedLocalThis->GetTexture()->getUVforPosInPixels(circlePos[0]);
 	for (int i = 1; i <= sliceCount; i++)
 	{
 		circlePos[i] = center;
 		float currentAngle = angle * (double)i - angle * 0.5;
-		circlePos[i].x += center.x * cosf(currentAngle);
-		circlePos[i].y += center.y * sinf(currentAngle);
-
-		circlePos[i] = texturedLocalThis->GetTexture()->getUVforPosInPixels(circlePos[i]);
+		circlePos[i].x += 0.5f * cosf(currentAngle);
+		circlePos[i].y += 0.5f * sinf(currentAngle);
 	}
 
 	int j = 0;

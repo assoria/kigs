@@ -246,6 +246,11 @@ void	TextureHandler::changeTexture()
 		}
 	}
 
+	if (!mTexture.isNil())
+	{
+		KigsCore::Connect(mTexture.get(), "NotifyUpdate", this, "NotifyUpdate");
+	}
+
 }
 
 void TextureHandler::NotifyUpdate(const unsigned int  labelid)
@@ -277,23 +282,8 @@ SP<Texture>	TextureHandler::GetEmptyTexture(const std::string& name)
 void	TextureHandler::setCurrentFrame(const SpriteSheetFrameData* ssf)
 {
 	mCurrentFrame = ssf;
-	mSize.x = ssf->SourceSize_X;
-	mSize.y = ssf->SourceSize_Y;
 
 	refreshSizeAndUVs(ssf);
-}
-
-v2f	TextureHandler::getUVforPosInPixels(const v2f& pos)
-{
-	v2f result(mUVStart);
-
-	v2f dx(pos.x * mUVector);
-	v2f dy(pos.y * mVVector);
-
-	dx *= mOneOnPower2Size;
-	dy *= mOneOnPower2Size;
-
-	return result+dx+dy;
 }
 
 
@@ -314,32 +304,61 @@ v2f	TextureHandler::getDrawablePos(const v2f& pos)
 
 void	TextureHandler::refreshSizeAndUVs(const SpriteSheetFrameData* ssf)
 {
+	bool perfectPix = mTexture->HasFlag(Texture::hasNearestPixelSet);
+	mUVTexture.SetIdentity();
 
-	mUVStart.Set(0.0f, 0.0f);
+	v2f uvSize;
 
 	if (ssf)
 	{
-		mUVStart.x = (ssf->FramePos_X) * mOneOnPower2Size.x;
-		mUVStart.y = (ssf->FramePos_Y) * mOneOnPower2Size.y;
+
 		if (ssf->Rotated)
 		{
-			mUVector.Set(0.0f, 1.0f);
-			mVVector.Set(1.0f, 0.0f);
+			// 2d 90° rotation matrix
+			mUVTexture.e[0][0] = 0.0f;
+			mUVTexture.e[0][1] = -1.0f;
+			mUVTexture.e[1][0] = 1.0f;
+			mUVTexture.e[1][1] = 0.0f;
+		}
+
+
+		if (ssf->Trimmed)
+		{
+			mUVTexture.e[0][2] = (ssf->FramePos_X + ssf->Decal_X) * mOneOnPower2Size.x;
+			mUVTexture.e[1][2] = (ssf->FramePos_Y + ssf->Decal_Y) * mOneOnPower2Size.y;
+			uvSize.x = ssf->FrameSize_X;
+			uvSize.y = ssf->FrameSize_Y;
 		}
 		else
 		{
-			mUVector.Set(1.0f, 0.0f);
-			mVVector.Set(0.0f, 1.0f);
+			mUVTexture.e[0][2] = (ssf->FramePos_X) * mOneOnPower2Size.x;
+			mUVTexture.e[1][2] = (ssf->FramePos_Y) * mOneOnPower2Size.y;
+			uvSize.x = ssf->SourceSize_X;
+			uvSize.y = ssf->SourceSize_Y;
 		}
-		mSize.x = ssf->FrameSize_X;
-		mSize.y = ssf->FrameSize_Y;
+
+		mSize.x = ssf->SourceSize_X;
+		mSize.y = ssf->SourceSize_Y;
 	}
 	else
 	{
-		mUVector.Set(1.0f, 0.0f);
-		mVVector.Set(0.0f, 1.0f);
 		mTexture->GetSize(mSize.x, mSize.y);
+		uvSize = mSize;
 	}
+
+	if (!perfectPix)
+	{
+		mUVTexture.e[0][2] += 0.5f * mOneOnPower2Size.x;
+		mUVTexture.e[1][2] += 0.5f * mOneOnPower2Size.y;
+		uvSize.x -= 1.0f;
+		uvSize.y -= 1.0f;
+	}
+
+	uvSize *= mOneOnPower2Size;
+	mUVTexture.e[0][0] *= uvSize.x;
+	mUVTexture.e[1][0] *= uvSize.x;
+	mUVTexture.e[0][1] *= uvSize.y;
+	mUVTexture.e[1][1] *= uvSize.y;
 }
 
 void	TextureHandler::refreshTextureInfos()
