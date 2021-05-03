@@ -258,9 +258,10 @@ void BaseUI2DLayer::TravDraw(TravState* state)
 	renderer->SetScissorTestMode(RENDERER_SCISSOR_TEST_ON);
 	renderer->SetScissorValue(0, 0, (int)rendersx, (int)rendersy);
 	
-
 	renderer->LoadIdentity(MATRIX_MODE_MODEL);
 	renderer->LoadIdentity(MATRIX_MODE_VIEW);
+	renderer->LoadIdentity(MATRIX_MODE_UV);
+
 	//renderer->FlushMatrix();
 	//renderer->FlushState();
 

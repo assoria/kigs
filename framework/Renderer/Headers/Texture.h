@@ -47,7 +47,8 @@ class Texture : public Drawable
 {
 public:
 	static constexpr unsigned int isDirtyContext = 1<<usedFlags;
-	static constexpr unsigned int usedFlags = Drawable::usedFlags+1;
+	static constexpr unsigned int hasNearestPixelSet = 1 << (usedFlags+1);
+	static constexpr unsigned int usedFlags = Drawable::usedFlags+2;
 
 	friend class RenderingScreen;
 
@@ -172,6 +173,14 @@ public:
 	friend class TextureHandler;
 
 protected:
+
+	/**
+	* \brief	this method is called to notify this that one of its attribute has changed.
+	* \fn 		virtual void NotifyUpdate(const unsigned int);
+	* \param	const unsigned int  : attribute ID
+	*/
+	void NotifyUpdate(const unsigned int /* labelid */) override;
+
 	/**
 	* \brief	initialize modifiable
 	* \fn		virtual	void	InitModifiable();

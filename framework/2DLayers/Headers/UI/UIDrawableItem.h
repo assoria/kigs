@@ -46,6 +46,7 @@ protected:
 	{
 		return pos;
 	}
+
 	UIVerticesInfo mVI;
 
 	maVect2DI mSliced = BASE_ATTRIBUTE(Sliced, 0, 0);

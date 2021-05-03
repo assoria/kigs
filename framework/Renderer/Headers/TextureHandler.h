@@ -47,12 +47,20 @@ public:
 		if (mTexture)
 		{
 			mTexture->DoPreDraw(st);
+			if (st)
+			{
+				st->GetRenderer()->PushAndLoadMatrix(3, mUVTexture);
+			}
 		}
 	}
 	void	DoPostDraw(TravState* st)
 	{
 		if (mTexture)
 		{
+			if (st)
+			{
+				st->GetRenderer()->PopMatrix(3);
+			}
 			mTexture->DoPostDraw(st);
 		}
 	}
@@ -101,8 +109,6 @@ public:
 		}
 	}
 
-	v2f	getUVforPosInPixels(const v2f& pos);
-
 	v2f getDrawablePos(const v2f& pos);
 
 	bool HasTexture()
@@ -133,7 +139,6 @@ public:
 		else // reset some values
 		{
 			mSize.Set( 0.0f,0.0f );
-			mUVStart.Set(0.0f, 0.0f);
 		}
 
 	}
@@ -142,6 +147,9 @@ public:
 	{
 		return mTexture;
 	}
+
+	WRAP_METHODS(NotifyUpdate);
+
 protected:
 
 	/**
@@ -169,16 +177,12 @@ protected:
 
 	void	refreshSizeAndUVs(const SpriteSheetFrameData* ssf);
 
-	// starting pos of texture in uv coordinates
-	v2f mUVStart = { 0.0f,0.0f };
 	// size of one pixel in uv coordinates
 	v2f mOneOnPower2Size;
-	// unit vector in U direction (for rotated textures)
-	v2f mUVector;
-	// unit vector in V direction (for rotated textures)
-	v2f mVVector;
 
 	v2f mSize = {0.0f,0.0f};
+
+	Matrix4x4	mUVTexture;
 
 	void	initFromSpriteSheet(const std::string& jsonfilename);
 	void	initFromPicture(const std::string& picfilename);
