@@ -49,7 +49,6 @@ extern ModuleBase*				MODULEINITFUNC(KigsCore* core, const kstl::vector<CoreModi
 #endif
 
 // ## Static object initialization
-FreeType_TextDrawer*		RendererDX11::myDrawer = NULL;
 
 unsigned int				RendererDX11::mDirtyShaderMatrix = 0;
 
@@ -338,13 +337,6 @@ void RendererDX11::Init(KigsCore* core, const kstl::vector<CoreModifiableAttribu
 	if (!ModuleRenderer::mTheGlobalRenderer)
 		ModuleRenderer::mTheGlobalRenderer = this;
 
-	//Drawer freetype
-	if (!myDrawer)
-	{
-		myDrawer = new FreeType_TextDrawer();
-		myDrawer->startBuildFonts();
-	}
-
 	
 	ModuleSpecificRenderer::Init(core, params);
 	
@@ -476,11 +468,6 @@ bool RendererDX11::CreateDevice()
 
 void RendererDX11::Close()
 {
-	if (myDrawer)
-	{
-		delete myDrawer;
-		myDrawer = NULL;
-	}
 
 	// Manage queries
 	for (int type = 0; type < RENDERER_QUERY_TYPE_COUNT; ++type)

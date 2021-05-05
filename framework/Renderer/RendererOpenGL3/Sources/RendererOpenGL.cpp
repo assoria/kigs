@@ -15,7 +15,7 @@
 #include "OpenGLRenderingMatrix.h"
 #include "OpenGLHolo3DPanel.h"
 #include "OpenGLMaterial.h"
-#include "FreeType_TextDrawer.h"
+
 
 #include "GLSLDeferred.h"
 #include "GLSLGenericMeshShader.h"
@@ -36,9 +36,7 @@
 
 #include "algorithm"
 
-// ## Static object initialization
 
-FreeType_TextDrawer*		RendererOpenGL::mDrawer = NULL;
 
 /*API3DShader*					RendererOpenGL::mCurrentShader = NULL;
 unsigned int				RendererOpenGL::mCurrentShaderProgram=0;
@@ -587,13 +585,6 @@ void RendererOpenGL::Init(KigsCore* core, const kstl::vector<CoreModifiableAttri
 #endif*/
 	
 
-	// create the freetype drawer
-	if (!mDrawer)
-	{
-		mDrawer = new FreeType_TextDrawer();
-		mDrawer->startBuildFonts();
-	}
-
 	mVertexBufferManager = std::make_unique<VertexBufferManager>();
 
 	if (!ModuleRenderer::mTheGlobalRenderer)
@@ -611,11 +602,7 @@ void RendererOpenGL::Init(KigsCore* core, const kstl::vector<CoreModifiableAttri
 
 void RendererOpenGL::Close()
 {
-	if (mDrawer)
-	{
-		delete mDrawer;
-		mDrawer = NULL;
-	}
+	
 
 	mDefaultUIShader = nullptr;
 

@@ -34,7 +34,7 @@ class MaterialStage;
 class Scene3D;
 class TravState;
 class ShaderBase;
-
+class FreeType_TextDrawer;
 //! number max of stage
 #define MAX_MATERIAL_STAGE	4
 
@@ -1187,6 +1187,9 @@ public:
 	virtual bool    BeginOcclusionQuery(TravState* state, u64& query_id, RendererQueryType type, int frames_to_keep = 1) { KIGS_ASSERT(!"Occlusion queries not supported"); return false; }
 	virtual void    EndOcclusionQuery(TravState* state, u64 query_id) { KIGS_ASSERT(!"Occlusion queries not supported"); }
 	virtual bool    GetOcclusionQueryResult(TravState* state, u64 query_id, u64& result, int frames_to_extend_if_not_ready = 0) { KIGS_ASSERT(!"Occlusion queries not supported"); return false; }
+
+
+	static FreeType_TextDrawer* mDrawer;
 
 protected:
 

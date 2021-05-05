@@ -25,7 +25,6 @@ class RendererDX11;
 #endif
 #endif
 
-class FreeType_TextDrawer;
 
 namespace DX
 {
@@ -307,8 +306,6 @@ public:
 	virtual void DrawUITriangles(TravState * state, const UIVerticesInfo * qi) override;
 
 	virtual void InitLayerDraw(Scene3D * scene) { /* nothing here */ }
-
-	static FreeType_TextDrawer *	myDrawer;
 
 	void DrawPendingInstances(TravState * state) override;
 

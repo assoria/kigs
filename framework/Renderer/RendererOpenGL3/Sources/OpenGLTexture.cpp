@@ -829,7 +829,7 @@ bool OpenGLTexture::CreateFromText(const unsigned short* text, u32 _maxLineNumbe
 			textSize++;
 
 
-		if (!RendererOpenGL::mDrawer->IsInCache(fontName))
+		if (!ModuleSpecificRenderer::mDrawer->IsInCache(fontName))
 		{
 			auto& pathManager = KigsCore::Singleton<FilePathManager>();
 			SmartPointer<FileHandle> fullfilenamehandle;
@@ -846,7 +846,7 @@ bool OpenGLTexture::CreateFromText(const unsigned short* text, u32 _maxLineNumbe
 			if (L_Buffer)
 			{
 				unsigned char* pBuffer = (unsigned char*)L_Buffer->CopyBuffer();
-				RendererOpenGL::mDrawer->SetFont(fontName, pBuffer, size, fontSize);
+				ModuleSpecificRenderer::mDrawer->SetFont(fontName, pBuffer, size, fontSize);
 				L_Buffer->Destroy();
 			}
 			else
@@ -854,12 +854,12 @@ bool OpenGLTexture::CreateFromText(const unsigned short* text, u32 _maxLineNumbe
 		}
 		else
 		{
-			RendererOpenGL::mDrawer->SetFont(fontName, 0, 0, fontSize);
+			ModuleSpecificRenderer::mDrawer->SetFont(fontName, 0, 0, fontSize);
 		}
 
 		int L_Width = 0;
 		int L_Height = 0;
-		pImageData = RendererOpenGL::mDrawer->DrawTextToImage(text, textSize, L_Width, L_Height, (TextAlignment)a_Alignment, false, _maxLineNumber, maxSize, a_drawingLimit, (unsigned char)R, (unsigned char)G, (unsigned char)B);
+		pImageData = ModuleSpecificRenderer::mDrawer->DrawTextToImage(text, textSize, L_Width, L_Height, (TextAlignment)a_Alignment, false, _maxLineNumber, maxSize, a_drawingLimit, (unsigned char)R, (unsigned char)G, (unsigned char)B);
 
 		if (!pImageData)
 			break;
