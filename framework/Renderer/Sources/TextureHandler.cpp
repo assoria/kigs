@@ -139,7 +139,7 @@ void	SpriteSheetData::Destroy(CoreModifiable* toDowngrade)
 }
 
 
-void	TextureHandler::initFromSpriteSheet(const std::string& jsonfilename)
+bool	TextureHandler::initFromSpriteSheet(const std::string& jsonfilename)
 {
 	auto& textureManager = KigsCore::Singleton<TextureFileManager>();
 	std::string texturename = textureManager->GetTextureFromSpriteSheetJSON(jsonfilename);
@@ -148,7 +148,7 @@ void	TextureHandler::initFromSpriteSheet(const std::string& jsonfilename)
 	{
 		if (mTexture->getValue<std::string>("TextureName") == texturename) // same texture, just returns
 		{
-			return;
+			return false;
 		}
 	}
 
@@ -157,11 +157,7 @@ void	TextureHandler::initFromSpriteSheet(const std::string& jsonfilename)
 	{
 		// load texture
 		mTexture = textureManager->GetTexture(texturename);
-		if (mTexture)
-		{
-			refreshTextureInfos();
-		}
-		return;
+		return true;
 	}
 
 	// else create the upgrador 
@@ -176,19 +172,16 @@ void	TextureHandler::initFromSpriteSheet(const std::string& jsonfilename)
 			{
 				delete newspritesheet;
 				newspritesheet = nullptr;
-				return;
+				return true;
 			}
 
 			mTexture->Upgrade(newspritesheet);
 		}
 	}
-	if (mTexture)
-	{
-		refreshTextureInfos();
-	}
+	return true;
 }
 
-void	TextureHandler::initFromPicture(const std::string& picfilename)
+bool	TextureHandler::initFromPicture(const std::string& picfilename)
 {
 
 	auto& textureManager = KigsCore::Singleton<TextureFileManager>();
@@ -196,22 +189,23 @@ void	TextureHandler::initFromPicture(const std::string& picfilename)
 
 	if (loaded.get() == mTexture.get()) // nothing changed
 	{
-		return;
+		return false;
 	}
 	setTexture(loaded);
+	return true;
 }
 
 
 
-void	TextureHandler::changeTexture()
+bool TextureHandler::changeTexture()
 {
 	std::string texname = mTextureName;
-
+	bool hasChanged = false;
 	// check texture type
 	auto arr = SplitStringByCharacter(mTextureName, ':');
 	if (arr.size() > 1) // use a sprite in a spritesheet 
 	{
-		initFromSpriteSheet(arr[0]);
+		hasChanged=initFromSpriteSheet(arr[0]);
 		SpriteSheetData* currentspritesheet = mTexture->getSpriteSheetData();
 		if (currentspritesheet)
 		{
@@ -231,26 +225,40 @@ void	TextureHandler::changeTexture()
 			}
 
 		}
-		return;
+		
 	}
 	else
 	{
 		if (texname.find(".json") != std::string::npos) // load a spritesheet
 		{
-			initFromSpriteSheet(texname);
+			hasChanged = initFromSpriteSheet(texname);
 			Upgrade("AnimationUpgrador");
 		}
 		else
 		{
-			initFromPicture(texname);
+			hasChanged = initFromPicture(texname);
 		}
 	}
 
 	if (!mTexture.isNil())
 	{
-		KigsCore::Connect(mTexture.get(), "NotifyUpdate", this, "NotifyUpdate");
+		refreshTextureInfos();
+	
+		if (!mTexture->IsInit())
+		{
+			KigsCore::Connect(mTexture.get(), "PostInit", this, "textureWasInit");
+		}
+		
+		KigsCore::Connect(mTexture.get(), "NotifyUpdate", this, "TextureNotifyUpdate");
+		
 	}
+	return true;
+}
 
+void	TextureHandler::textureWasInit()
+{
+	KigsCore::Disconnect(mTexture.get(), "PostInit", this, "textureWasInit");
+	refreshTextureInfos();
 }
 
 void TextureHandler::NotifyUpdate(const unsigned int  labelid)
@@ -259,11 +267,19 @@ void TextureHandler::NotifyUpdate(const unsigned int  labelid)
 	{
 		changeTexture();
 	}
-	else
+
+	ParentClassType::NotifyUpdate(labelid);
+	
+}
+
+void TextureHandler::TextureNotifyUpdate(CoreModifiable* sender, const unsigned int  labelid )
+{
+	if (labelid == mTexture->mForceNearest.getID())
 	{
-		ParentClassType::NotifyUpdate(labelid);
+		refreshSizeAndUVs(mCurrentFrame);
 	}
 }
+
 
 SP<Texture>	TextureHandler::GetEmptyTexture(const std::string& name)
 {
@@ -322,19 +338,19 @@ void	TextureHandler::refreshSizeAndUVs(const SpriteSheetFrameData* ssf)
 		}
 
 
-		if (ssf->Trimmed)
+		/*if (ssf->Trimmed)
 		{
 			mUVTexture.e[0][2] = (ssf->FramePos_X + ssf->Decal_X) * mOneOnPower2Size.x;
 			mUVTexture.e[1][2] = (ssf->FramePos_Y + ssf->Decal_Y) * mOneOnPower2Size.y;
 			uvSize.x = ssf->FrameSize_X;
 			uvSize.y = ssf->FrameSize_Y;
 		}
-		else
+		else*/
 		{
 			mUVTexture.e[0][2] = (ssf->FramePos_X) * mOneOnPower2Size.x;
 			mUVTexture.e[1][2] = (ssf->FramePos_Y) * mOneOnPower2Size.y;
-			uvSize.x = ssf->SourceSize_X;
-			uvSize.y = ssf->SourceSize_Y;
+			uvSize.x = ssf->FrameSize_X;
+			uvSize.y = ssf->FrameSize_Y;
 		}
 
 		mSize.x = ssf->SourceSize_X;
