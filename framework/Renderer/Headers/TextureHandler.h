@@ -118,7 +118,7 @@ public:
 
 	SP<Texture>	GetEmptyTexture(const std::string& name="");
 	// use mTextureName to load texture
-	void	changeTexture();
+	bool	changeTexture();
 
 	void	refreshTextureInfos();
 
@@ -132,11 +132,7 @@ public:
 		// replace texture
 		mTexture = texture;
 
-		if (mTexture)
-		{
-			refreshTextureInfos();
-		}
-		else // reset some values
+		if (mTexture.isNil())
 		{
 			mSize.Set( 0.0f,0.0f );
 		}
@@ -148,7 +144,6 @@ public:
 		return mTexture;
 	}
 
-	WRAP_METHODS(NotifyUpdate);
 
 protected:
 
@@ -184,11 +179,20 @@ protected:
 
 	Matrix4x4	mUVTexture;
 
-	void	initFromSpriteSheet(const std::string& jsonfilename);
-	void	initFromPicture(const std::string& picfilename);
+	// return true if something changed
+	bool	initFromSpriteSheet(const std::string& jsonfilename);
+	// return true if something changed
+	bool	initFromPicture(const std::string& picfilename);
 	void	setCurrentFrame(const SpriteSheetFrameData* ssf);
 
 	const SpriteSheetFrameData* mCurrentFrame = nullptr;
+
+	void	textureWasInit();
+
+	void TextureNotifyUpdate(CoreModifiable* sender,const unsigned int /* labelid */);
+
+	WRAP_METHODS(textureWasInit, TextureNotifyUpdate);
+
 };
 
 
