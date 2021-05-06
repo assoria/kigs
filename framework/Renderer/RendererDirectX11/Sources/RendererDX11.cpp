@@ -243,7 +243,10 @@ void RendererDX11::ProtectedFlushMatrix(TravState* state)
 		// Get a pointer to the data in the constant buffer.
 		dataPtr = (MatrixBufferType*)mappedResource.pData;
 		dataPtr->model = mMatrixStack[MATRIX_MODE_MODEL].back();
-		
+
+		{
+			dataPtr->uvMatrix = mMatrixStack[MATRIX_MODE_UV].back();
+		}
 		if (state->GetHolographicMode())
 		{
 			// In holographic mode, instead of view and proj we have two viewprojs, one for each render target

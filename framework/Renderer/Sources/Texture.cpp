@@ -47,9 +47,8 @@ void Texture::NotifyUpdate(const unsigned int  labelid )
 	if (labelid == mForceNearest.getLabelID())
 	{
 		ChangeFlag(hasNearestPixelSet, mForceNearest);
-		return;
 	}
-	Drawable::NotifyUpdate(labelid);
+	Drawable::NotifyUpdate(labelid); // always call parent so that notifyupdate signal is called
 }
 
 void	Texture::InitModifiable()

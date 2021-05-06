@@ -221,6 +221,9 @@ public:
 struct MatrixBufferType
 {
 	Matrix4x4 model;
+	
+	Matrix4x4 uvMatrix;
+
 	union
 	{
 		struct
