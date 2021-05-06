@@ -163,7 +163,7 @@ void	RendererOpenGL::ProtectedFlushMatrix(TravState* state)
 				uvm.e[1][2] = uvm4x4.e[1][2];
 				uvm.e[2][0] = uvm.e[2][1] = uvm.e[2][2]=0.0f;
 
-				glUniformMatrix3fv(locations->uvMatrix, 1, false, &(uvm.e[0][0])); CHECK_GLERROR;
+				glUniformMatrix3fv(locations->uvMatrix, 1, true, &(uvm.e[0][0])); CHECK_GLERROR;
 			}
 		}
 		mDirtyShaderMatrix = 0;

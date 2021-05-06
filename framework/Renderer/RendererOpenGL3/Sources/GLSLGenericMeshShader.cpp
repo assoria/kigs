@@ -317,7 +317,7 @@ std::string API3DGenericMeshShader::GetDefaultVertexShaderMain()
 	vOneOnFogScale=1.0/fog_scale;
 #endif
 #ifdef CLIENT_STATE_TEXTURE_COORD_ARRAY0 
-	vec3 uvtmp = uv_matrix* vec3(attrib_texcoord,0.0f);
+	vec3 uvtmp = uv_matrix* vec3(attrib_texcoord,1.0);
 	vTexcoord = uvtmp.xy;
 #endif
 #ifdef CLIENT_STATE_TANGENT_ARRAY 
