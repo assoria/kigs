@@ -38,6 +38,8 @@ void UIShapeDisc::SetTexUV(UIItem* item, UIVerticesInfo* aQI)
 		circlePos[i].y += 0.5f * sinf(currentAngle);
 	}
 
+	texturedLocalThis->TransformUV(circlePos.data(), sliceCount + 1);
+
 	int j = 0;
 	for (int i = 0; i < sliceCount; i++)
 	{

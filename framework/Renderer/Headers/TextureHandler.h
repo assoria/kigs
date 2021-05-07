@@ -21,9 +21,14 @@
 // ****************************************
 class TextureHandler : public CoreModifiable
 {
+
 public:
+	
+	
 	friend class AnimationUpgrador;
 	DECLARE_CLASS_INFO(TextureHandler, CoreModifiable,Renderer)
+	static constexpr unsigned int pushUVMatrix = 1 << ParentClassType::usedUserFlags;
+	static constexpr unsigned int usedUserFlags = ParentClassType::usedUserFlags + 1;
 
 	/**
 	* \brief	constructor
@@ -47,9 +52,9 @@ public:
 		if (mTexture)
 		{
 			mTexture->DoPreDraw(st);
-			if (st)
+			if (st && isUserFlagSet(pushUVMatrix))
 			{
-				st->GetRenderer()->PushAndLoadMatrix(3, mUVTexture);
+				st->GetRenderer()->PushAndLoadMatrix(MATRIX_MODE_UV, mUVTexture);
 			}
 		}
 	}
@@ -57,9 +62,9 @@ public:
 	{
 		if (mTexture)
 		{
-			if (st)
+			if (st && isUserFlagSet(pushUVMatrix))
 			{
-				st->GetRenderer()->PopMatrix(3);
+				st->GetRenderer()->PopMatrix(MATRIX_MODE_UV);
 			}
 			mTexture->DoPostDraw(st);
 		}
@@ -101,11 +106,11 @@ public:
 		return 0;
 	}
 
-	void SetFlag(unsigned int flag)
+	void setUserFlag(unsigned int flag)
 	{
 		if (mTexture)
 		{
-			mTexture->SetFlag(flag);
+			mTexture->setUserFlag(flag);
 		}
 	}
 
@@ -144,6 +149,10 @@ public:
 		return mTexture;
 	}
 
+	const Matrix4x4& getUVTexture() const
+	{
+		return mUVTexture;
+	}
 
 protected:
 
@@ -168,7 +177,8 @@ protected:
 
 	INSERT_FORWARDSP(Texture,mTexture);
 
-	maString mTextureName = BASE_ATTRIBUTE(TextureName, "");
+	maString	mTextureName = BASE_ATTRIBUTE(TextureName, "");
+	maBool		mPushUVMatrix = BASE_ATTRIBUTE(PushUVMatrix, false);
 
 	void	refreshSizeAndUVs(const SpriteSheetFrameData* ssf);
 
