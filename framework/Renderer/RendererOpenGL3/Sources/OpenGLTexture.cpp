@@ -138,7 +138,7 @@ void	OpenGLTexture::UninitModifiable()
 	if (!_isInit)
 		return;
 	// get TextureIndex
-	if (!HasFlag(isDirtyContext) && mTextureGLIndex != (u32)-1)
+	if (!isUserFlagSet(isDirtyContext) && mTextureGLIndex != (u32)-1)
 	{
 		ModuleSceneGraph* scenegraph = static_cast<ModuleSceneGraph*>(KigsCore::Instance()->GetMainModuleInList(SceneGraphModuleCoreIndex));
 		scenegraph->AddDefferedItem((void*)mTextureGLIndex, DefferedAction::DESTROY_TEXTURE);

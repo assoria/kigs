@@ -94,7 +94,7 @@ void UINode3DLayer::NotifyUpdate(const unsigned int labelid)
 	ParentClassType::NotifyUpdate(labelid);
 	if ((labelid == mSize.getLabelID()) || (labelid == mDesignSize.getLabelID()))
 	{
-		SetFlag(BoundingBoxIsDirty | GlobalBoundingBoxIsDirty);
+		setUserFlag(BoundingBoxIsDirty | GlobalBoundingBoxIsDirty);
 		if(mCollider) mCollider->setValue("Size", (v2f)mSize);
 		PropagateDirtyFlagsToSons(this);
 		PropagateDirtyFlagsToParents(this);

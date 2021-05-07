@@ -371,7 +371,7 @@ protected:
 // more generic UserFlags
 constexpr u32 UserFlagsBitSize = 16;
 constexpr u32 UserFlagsShift = (32 - UserFlagsBitSize);
-// user flag is set at 0xFF000000
+// user flag is set at 0xFFFF0000
 constexpr u32 UserFlagsMask = 0xFFFFFFFF<< UserFlagsShift;
 
 #define SIGNAL_ARRAY_CONTENT(a) #a, 
@@ -484,6 +484,8 @@ public:
 	//DECLARE_ABSTRACT_CLASS_INFO(CoreModifiable, RefCountedClass, KigsCore);
 	static const KigsID mClassID;
 	static KigsID mRuntimeType;
+
+	static constexpr unsigned int usedUserFlags = 0;
 	
 	typedef CoreModifiable CurrentClassType;
 	typedef GenericRefCountedBaseClass ParentClassType;
@@ -898,7 +900,7 @@ public:
 	{
 		mModifiableFlag &= 0xFFFFFFFF ^ (u32)NotificationCenterRegistered;
 	}
-	inline bool isFlagAsNotificationCenterRegistered()
+	inline bool isFlagAsNotificationCenterRegistered() const
 	{
 		return (mModifiableFlag&(u32)NotificationCenterRegistered) != 0;
 	}
@@ -910,7 +912,7 @@ public:
 	{
 		mModifiableFlag &= 0xFFFFFFFF ^ (u32)ReferenceRegistered;
 	}
-	inline bool isFlagAsReferenceRegistered()
+	inline bool isFlagAsReferenceRegistered() const
 	{
 		return (mModifiableFlag&(u32)ReferenceRegistered) != 0;
 	}
@@ -922,7 +924,7 @@ public:
 	{
 		mModifiableFlag &= 0xFFFFFFFF ^ (u32)AutoUpdateRegistered;
 	}
-	inline bool isFlagAsAutoUpdateRegistered()
+	inline bool isFlagAsAutoUpdateRegistered() const
 	{
 		return (mModifiableFlag&(u32)AutoUpdateRegistered) != 0;
 	}
@@ -934,7 +936,7 @@ public:
 	{
 		mModifiableFlag &= 0xFFFFFFFF ^ (u32)PostDestroyFlag;
 	}
-	inline bool isFlagAsPostDestroy()
+	inline bool isFlagAsPostDestroy() const
 	{
 		return (mModifiableFlag & (u32)PostDestroyFlag) != 0;
 	}
@@ -946,11 +948,17 @@ public:
 	{
 		mModifiableFlag &= 0xFFFFFFFF ^ (((u32)flag) << UserFlagsShift);
 	}
-	inline bool isUserFlagSet(u32 flag)
+
+	inline void changeUserFlag(u32 flag, bool setit)
+	{
+		setit?setUserFlag(flag):unsetUserFlag(flag);
+	}
+
+	inline bool isUserFlagSet(u32 flag) const
 	{
 		return ((mModifiableFlag&(((u32)flag) << UserFlagsShift)) != 0);
 	}
-	inline bool isInitFlagSet() { return ((mModifiableFlag&((u32)InitFlag)) != 0); }
+	inline bool isInitFlagSet() const { return ((mModifiableFlag&((u32)InitFlag)) != 0); }
 
 	inline void flagAllowChanges()
 	{
@@ -960,7 +968,7 @@ public:
 	{
 		mModifiableFlag &= 0xFFFFFFFF ^ (u32)AllowChanges;
 	}
-	inline bool isFlagAllowChanges()
+	inline bool isFlagAllowChanges() const
 	{
 		return (mModifiableFlag&(u32)AllowChanges) != 0;
 	}
@@ -973,7 +981,7 @@ public:
 	{
 		mModifiableFlag &= 0xFFFFFFFF ^ (u32)AutoCreateAttributes;
 	}
-	inline bool isFlagAutoCreateAttributes()
+	inline bool isFlagAutoCreateAttributes() const
 	{
 		return (mModifiableFlag & (u32)AutoCreateAttributes) != 0;
 	}
@@ -1329,7 +1337,7 @@ private:
 	LazyContent* GetLazyContent() const;
 
 	// Flags
-	int mModifiableFlag =  AllowChanges;
+	unsigned int mModifiableFlag =  AllowChanges;
 
 #ifdef KEEP_NAME_AS_STRING
 	// keep track of Decorators only on win32 to be able to export them
