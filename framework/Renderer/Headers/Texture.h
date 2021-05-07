@@ -46,14 +46,14 @@ class SpriteSheetData;
 class Texture : public Drawable
 {
 public:
-	static constexpr unsigned int isDirtyContext = 1<<usedFlags;
-	static constexpr unsigned int hasNearestPixelSet = 1 << (usedFlags+1);
-	static constexpr unsigned int usedFlags = Drawable::usedFlags+2;
+	DECLARE_ABSTRACT_CLASS_INFO(Texture, Drawable, Renderer)
+
+
+	static constexpr unsigned int isDirtyContext = 1<< ParentClassType::usedUserFlags;
+	static constexpr unsigned int hasNearestPixelSet = 1 << (ParentClassType::usedUserFlags +1);
+	static constexpr unsigned int usedUserFlags = ParentClassType::usedUserFlags +2;
 
 	friend class RenderingScreen;
-
-
-	DECLARE_ABSTRACT_CLASS_INFO(Texture,Drawable,Renderer)
 
 	/**
 	* \brief	constructor
@@ -188,7 +188,7 @@ protected:
 	void	InitModifiable() override;
 	void	UninitModifiable() override
 	{
-		UnsetFlag(isDirtyContext);
+		unsetUserFlag(isDirtyContext);
 		Drawable::UninitModifiable();
 	}
 
