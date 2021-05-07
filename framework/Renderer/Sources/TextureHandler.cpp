@@ -36,7 +36,11 @@ void	TextureHandler::InitModifiable()
 		{
 			changeTexture();
 		}
-		
+		if (mPushUVMatrix)
+		{
+			setUserFlag(pushUVMatrix);
+		}
+		mPushUVMatrix.changeNotificationLevel(Owner);
 	}
 }
 
@@ -267,7 +271,10 @@ void TextureHandler::NotifyUpdate(const unsigned int  labelid)
 	{
 		changeTexture();
 	}
-
+	else if (labelid == mPushUVMatrix.getID())
+	{
+		changeUserFlag(pushUVMatrix, mPushUVMatrix);
+	}
 	ParentClassType::NotifyUpdate(labelid);
 	
 }
@@ -320,7 +327,7 @@ v2f	TextureHandler::getDrawablePos(const v2f& pos)
 
 void	TextureHandler::refreshSizeAndUVs(const SpriteSheetFrameData* ssf)
 {
-	bool perfectPix = mTexture->HasFlag(Texture::hasNearestPixelSet);
+	bool perfectPix = mTexture->isUserFlagSet(Texture::hasNearestPixelSet);
 	mUVTexture.SetIdentity();
 
 	v2f uvSize;

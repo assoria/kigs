@@ -54,11 +54,14 @@ void UITexturedItem::SetTexUV(UIVerticesInfo * aQI)
 		auto slice_size = (v2f)mSliced;
 		if (slice_size == v2f(0, 0))
 		{
+			std::vector<v2f>	transformed = { {0.0f, 0.0f},{0.0f, 1.0f},{1.0f, 1.0f},{1.0f, 0.0f} };
+			TransformUV(transformed.data(), transformed.size());
+
 			// triangle strip order
-			buf[0].setTexUV(0.0f, 0.0f);
-			buf[1].setTexUV(0.0f, 1.0f);
-			buf[3].setTexUV(1.0f, 1.0f);
-			buf[2].setTexUV(1.0f, 0.0f);
+			buf[0].setTexUV(transformed[0]);
+			buf[1].setTexUV(transformed[1]);
+			buf[3].setTexUV(transformed[2]);
+			buf[2].setTexUV(transformed[3]);
 		}
 		else
 		{
@@ -97,6 +100,8 @@ void UITexturedItem::SetTexUV(UIVerticesInfo * aQI)
 			set_quad_uv(current_uv, v2f(slice_size.x, 1.0f - slice_size.y), v2f(1.0f - slice_size.x * 2.0f, slice_size.y));
 			// Bottom Right
 			set_quad_uv(current_uv, v2f(1.0f - slice_size.x, 1.0f - slice_size.y), slice_size);
+
+			TransformUV(uvs, 6*9);
 
 			for (int i = 0; i < 6 * 9; ++i)
 				buf[i].setTexUV(uvs[i]);

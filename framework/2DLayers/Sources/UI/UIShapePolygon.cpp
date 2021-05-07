@@ -66,11 +66,15 @@ void UIShapePolygon::SetTexUV(UIItem* item, UIVerticesInfo* aQI)
 	{
 		return;
 	}
+	UITexturedItem* texturedLocalThis = static_cast<UITexturedItem*>(item);
 
 	VInfo2D::Data* buf = reinterpret_cast<VInfo2D::Data*>(aQI->Buffer());
 
+	std::vector<v2f>	transformed = mTriangulatedPoly;
+	texturedLocalThis->TransformUV(transformed.data(), transformed.size());
+
 	size_t j = 0;
-	for (const auto& p : mTriangulatedPoly)
+	for (const auto& p : transformed)
 	{
 		buf[j++].setTexUV(p);
 	}
