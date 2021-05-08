@@ -123,6 +123,7 @@ void ModuleSpecificRenderer::Init(KigsCore* core, const kstl::vector<CoreModifia
 	mMatrixStack[2].push_back();
 	mMatrixStack[2][0].SetIdentity();
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 	// create the freetype drawer
 	if (!mDrawer)
@@ -135,6 +136,10 @@ void ModuleSpecificRenderer::Init(KigsCore* core, const kstl::vector<CoreModifia
 	mMatrixStack[3].push_back();
 	mMatrixStack[3][0].SetIdentity();
 >>>>>>> First try at UVMatrix
+=======
+	mMatrixStack[3].push_back();
+	mMatrixStack[3][0].SetIdentity();
+>>>>>>> 413ba5bbb60f5f4f093f1b44471daa5209a245e1
 }
 
 void	ModuleSpecificRenderer::endFrame(TravState* state)
