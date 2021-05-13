@@ -6,6 +6,7 @@
 #include "TecLibs/2D/BBox2DI.h"
 #include "Upgrador.h"
 #include "Texture.h"
+#include "ModuleRenderer.h"
 
 
 // ****************************************
@@ -141,7 +142,6 @@ public:
 		{
 			mSize.Set( 0.0f,0.0f );
 		}
-
 	}
 
 	SP<Texture> getTexture()
