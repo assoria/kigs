@@ -46,9 +46,10 @@ void	TextureHandler::InitModifiable()
 
 void SpriteSheetData::sortAnimation(CoreItemSP& _FrameVector)
 {
-	std::vector<std::string>  str;
 	std::string AnimeName;
 	std::string CurrentName;
+
+	std::map<std::string,std::map<std::string, SpriteSheetFrameData*>> currentAnimList;
 
 	for (auto it : _FrameVector)
 	{
@@ -105,14 +106,23 @@ void SpriteSheetData::sortAnimation(CoreItemSP& _FrameVector)
 		if (str.size() == 2)
 		{
 			AnimeName = str[0];
-			auto& FrameVector = mAnimationList[AnimeName];
-			FrameVector.push_back(L_FrameInfo.get());
+			std::string framename = str[1];
+			auto& FrameList = currentAnimList[AnimeName];
+			FrameList[framename]=L_FrameInfo.get();
 		}
 		mAllFrameList[CurrentName] = std::move(L_FrameInfo);
 	}
+
+	for (auto& anim : currentAnimList)
+	{
+		auto& FrameVector = mAnimationList[anim.first];
+		for (auto& f : anim.second)
+		{
+			FrameVector.push_back(f.second);
+		}
+	}
+
 }
-
-
 
 bool	SpriteSheetData::Init(const std::string& json, std::string& texturename)
 {
@@ -308,6 +318,9 @@ void	TextureHandler::setCurrentFrame(const SpriteSheetFrameData* ssf)
 	mCurrentFrame = ssf;
 
 	refreshSizeAndUVs(ssf);
+
+	// notify parent that something changed
+	NotifyUpdate(0);
 }
 
 
@@ -379,6 +392,7 @@ void	TextureHandler::refreshSizeAndUVs(const SpriteSheetFrameData* ssf)
 	}
 
 	uvSize *= mOneOnPower2Size;
+	
 	mUVTexture.e[0][0] *= uvSize.x;
 	mUVTexture.e[1][0] *= uvSize.x;
 	mUVTexture.e[0][1] *= uvSize.y;
