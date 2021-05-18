@@ -88,6 +88,22 @@ public:
 
 protected:
 
+	void propagateOpacityChange()
+	{
+		SetNodeFlag(Node2D_NeedVerticeInfoUpdate);
+		for (auto s : mSons)
+		{
+			if (s->isSubType(UIItem::mClassID))
+			{
+				UIItem* sonItem = static_cast<UIItem*>(s);
+				if (sonItem->mOpacity < 0.0f)
+				{
+					sonItem->propagateOpacityChange();
+				}
+			}
+		}
+	}
+
 	bool ManageInputSwallowEvent(InputEvent& ev);
 
 	/**

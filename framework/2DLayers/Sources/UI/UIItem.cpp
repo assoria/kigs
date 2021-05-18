@@ -29,12 +29,15 @@ void	UIItem::InitModifiable()
 
 void UIItem::NotifyUpdate(const unsigned int labelid)
 {
-	if ( (labelid == mColor.getID()) || (labelid == mOpacity.getID()) )
+	if ( labelid == mColor.getID())
 	{
 		SetNodeFlag(Node2D_NeedVerticeInfoUpdate);
 	}
-
-	if (labelid == mIsHidden.getID())
+	else if (labelid == mOpacity.getID())
+	{
+		propagateOpacityChange();
+	}
+	else if (labelid == mIsHidden.getID())
 	{
 		PropagateNodeFlags();
 	}
