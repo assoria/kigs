@@ -17,7 +17,6 @@ IMPLEMENT_CONSTRUCTOR(UIItem)
 , mOpacity(*this, false, "Opacity", 1.0f)
 , mAlphaMask(nullptr)
 , mSwallowInputs(*this, false, "SwallowInputs", false)
-, mFocus(false)
 {
 }
 
