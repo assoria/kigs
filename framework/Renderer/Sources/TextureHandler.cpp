@@ -348,6 +348,8 @@ void	TextureHandler::refreshSizeAndUVs(const SpriteSheetFrameData* ssf)
 
 	if (ssf)
 	{
+		mUVTexture.e[0][2] = (ssf->FramePos_X) * mOneOnPower2Size.x;
+		mUVTexture.e[1][2] = (ssf->FramePos_Y) * mOneOnPower2Size.y;
 
 		if (ssf->Rotated)
 		{
@@ -356,23 +358,16 @@ void	TextureHandler::refreshSizeAndUVs(const SpriteSheetFrameData* ssf)
 			mUVTexture.e[0][1] = -1.0f;
 			mUVTexture.e[1][0] = 1.0f;
 			mUVTexture.e[1][1] = 0.0f;
+			mUVTexture.e[0][2] += ssf->FrameSize_Y * mOneOnPower2Size.x;
+			uvSize.x = ssf->FrameSize_Y;
+			uvSize.y = ssf->FrameSize_X;
 		}
-
-
-		/*if (ssf->Trimmed)
+		else
 		{
-			mUVTexture.e[0][2] = (ssf->FramePos_X + ssf->Decal_X) * mOneOnPower2Size.x;
-			mUVTexture.e[1][2] = (ssf->FramePos_Y + ssf->Decal_Y) * mOneOnPower2Size.y;
 			uvSize.x = ssf->FrameSize_X;
 			uvSize.y = ssf->FrameSize_Y;
 		}
-		else*/
-		{
-			mUVTexture.e[0][2] = (ssf->FramePos_X) * mOneOnPower2Size.x;
-			mUVTexture.e[1][2] = (ssf->FramePos_Y) * mOneOnPower2Size.y;
-			uvSize.x = ssf->FrameSize_X;
-			uvSize.y = ssf->FrameSize_Y;
-		}
+		
 
 		mSize.x = ssf->SourceSize_X;
 		mSize.y = ssf->SourceSize_Y;
@@ -385,7 +380,14 @@ void	TextureHandler::refreshSizeAndUVs(const SpriteSheetFrameData* ssf)
 
 	if (!perfectPix)
 	{
-		mUVTexture.e[0][2] += 0.5f * mOneOnPower2Size.x;
+		if (ssf && ssf->Rotated)
+		{
+			mUVTexture.e[0][2] -= 0.5f * mOneOnPower2Size.x;
+		}
+		else
+		{
+			mUVTexture.e[0][2] += 0.5f * mOneOnPower2Size.x;
+		}
 		mUVTexture.e[1][2] += 0.5f * mOneOnPower2Size.y;
 		uvSize.x -= 1.0f;
 		uvSize.y -= 1.0f;
@@ -394,8 +396,8 @@ void	TextureHandler::refreshSizeAndUVs(const SpriteSheetFrameData* ssf)
 	uvSize *= mOneOnPower2Size;
 	
 	mUVTexture.e[0][0] *= uvSize.x;
-	mUVTexture.e[1][0] *= uvSize.x;
-	mUVTexture.e[0][1] *= uvSize.y;
+	mUVTexture.e[1][0] *= uvSize.y;
+	mUVTexture.e[0][1] *= uvSize.x;
 	mUVTexture.e[1][1] *= uvSize.y;
 }
 
