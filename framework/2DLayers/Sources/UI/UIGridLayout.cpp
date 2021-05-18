@@ -125,10 +125,10 @@ void UIGridLayout::RecomputeLayout()
 
 						v2f prescale = node->GetPreScale();
 
-						if (prescale.x != ratio)
-							node->setValue("PreScaleX", ratio);
-						if (prescale.y != ratio)
-							node->setValue("PreScaleY", ratio);
+						if ((prescale.x != ratio) || (prescale.y != ratio))
+						{
+							node->setValue("PreScale", v2f(ratio,ratio));
+						}
 					}
 				}
 				else 
@@ -136,7 +136,7 @@ void UIGridLayout::RecomputeLayout()
 					v2f prescale = node->GetPreScale();
 
 					if ((prescale.x != 1.0f) || (prescale.y != 1.0f))
-						node->setValue("PreScaleX", v2f(1.0f,1.0f));
+						node->setValue("PreScale", v2f(1.0f,1.0f));
 				}
 
 				// Add padding
