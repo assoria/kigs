@@ -511,9 +511,6 @@ void DataDrivenBaseApplication::ProtectedInit()
 	// retrieve wanted values
 	AppInit->getValue("Size", L_ScreenSize);
 
-	// test
-	AppInit["theRenderingScreen"]->getValue("Size", L_ScreenSize);
-
 	v2f L_ScreenPos(0,0);
 
 	AppInit->getValue("Position", L_ScreenPos);
