@@ -76,12 +76,12 @@ void DX11RenderingScreen::FetchDepth(int x, int y, int width, int height, unsign
 
 void DX11RenderingScreen::Resize(kfloat sizeX, kfloat sizeY)
 {
-	// before screen is init, only update sizeX and sizeY
-	if (!IsInit())
+	if (mResizeDesignSize)
 	{
-		mSize = v2f(sizeX,sizeY);
+		mDesignSize = v2f(sizeX,sizeY);
 	}
-	else
+	mSize = v2f(sizeX,sizeY);
+	if (IsInit())
 	{
 		ReleaseResources();
 		CreateResources();
@@ -484,9 +484,15 @@ bool DX11RenderingScreen::CreateResources()
 #else
 		DX::ThrowIfFailed(dxinstance->mDevice->CreateTexture2D(&colorBufferDesc, NULL, mRenderTargetBuffer.ReleaseAndGetAddressOf()));
 #endif
-	
-		SP<TextureFileManager> texfileManager = KigsCore::GetSingleton("TextureFileManager");
-		mFBOTexture = texfileManager->CreateTexture(getName());
+		if (!mFBOTexture)
+		{
+			SP<TextureFileManager> texfileManager = KigsCore::GetSingleton("TextureFileManager");
+			mFBOTexture = texfileManager->CreateTexture(getName());
+		}
+		else
+		{
+			mFBOTexture->UnInit();
+		}
 		mFBOTexture->setValue("Width", wanted_x);
 		mFBOTexture->setValue("Height", wanted_y);
 		mFBOTexture->InitForFBO();
@@ -600,6 +606,16 @@ void DX11RenderingScreen::setCurrentContext()
 
 void DX11RenderingScreen::ReleaseResources()
 {
+	RendererDX11* renderer = reinterpret_cast<RendererDX11*>(ModuleRenderer::mTheGlobalRenderer);
+	DXInstance* dxinstance = renderer->getDXInstance();
+
+	if (dxinstance->mCurrentRenderTarget == mRenderTargetView)
+	{
+		dxinstance->mCurrentRenderTarget = nullptr;
+		dxinstance->mCurrentDepthStencilTarget = nullptr;
+		dxinstance->mDeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
+	}
+
 	mRenderTargetBuffer = nullptr;
 	mRenderTargetView = nullptr;
 	mDepthStencilBuffers.clear();

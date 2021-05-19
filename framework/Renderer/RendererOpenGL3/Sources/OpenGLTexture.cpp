@@ -831,7 +831,7 @@ bool OpenGLTexture::CreateFromText(const unsigned short* text, u32 _maxLineNumbe
 
 		if (!ModuleSpecificRenderer::mDrawer->IsInCache(fontName))
 		{
-			auto& pathManager = KigsCore::Singleton<FilePathManager>();
+			auto pathManager = KigsCore::Singleton<FilePathManager>();
 			SmartPointer<FileHandle> fullfilenamehandle;
 
 			if (pathManager)
@@ -901,7 +901,7 @@ bool	OpenGLTexture::Load()
 	}
 	else
 	{
-		auto& pathManager = KigsCore::Singleton<FilePathManager>();
+		auto pathManager = KigsCore::Singleton<FilePathManager>();
 
 		kstl::string fileName = mFileName.const_ref();
 

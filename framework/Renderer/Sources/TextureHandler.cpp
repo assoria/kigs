@@ -155,7 +155,7 @@ void	SpriteSheetData::Destroy(CoreModifiable* toDowngrade)
 
 bool	TextureHandler::initFromSpriteSheet(const std::string& jsonfilename)
 {
-	auto& textureManager = KigsCore::Singleton<TextureFileManager>();
+	auto textureManager = KigsCore::Singleton<TextureFileManager>();
 	std::string texturename = textureManager->GetTextureFromSpriteSheetJSON(jsonfilename);
 
 	if (!mTexture.isNil())
@@ -198,7 +198,7 @@ bool	TextureHandler::initFromSpriteSheet(const std::string& jsonfilename)
 bool	TextureHandler::initFromPicture(const std::string& picfilename)
 {
 
-	auto& textureManager = KigsCore::Singleton<TextureFileManager>();
+	auto textureManager = KigsCore::Singleton<TextureFileManager>();
 	SP<Texture> loaded=	textureManager->GetTexture(picfilename);
 
 	if (loaded.get() == mTexture.get()) // nothing changed

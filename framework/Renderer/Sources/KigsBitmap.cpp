@@ -213,7 +213,7 @@ void	KigsBitmap::Print(const std::string& txt, int posx, int posy, unsigned int 
 
 		if (!ModuleSpecificRenderer::mDrawer->IsInCache(fontName.c_str()))
 		{
-			auto& pathManager = KigsCore::Singleton<FilePathManager>();
+			auto pathManager = KigsCore::Singleton<FilePathManager>();
 			SmartPointer<FileHandle> fullfilenamehandle;
 
 			if (pathManager)

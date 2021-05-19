@@ -223,18 +223,18 @@ int BinMeshLoader::ReadFile(Mesh *pMesh)
 
 			if(stagedesc.mTexture != "empty")
 			{
-				auto& texfileManager = KigsCore::Singleton<TextureFileManager>();
+				auto texfileManager = KigsCore::Singleton<TextureFileManager>();
 				SP<Texture> Tex = texfileManager->GetTexture(stagedesc.mTexture, false);
 				Tex->setValue(LABEL_TO_ID(ForcePow2),true);
 				Tex->Init();
 
-				MatStage->addItem((CMSP&)Tex);
+				MatStage->addItem(Tex);
 				
 			}
 
 			MatStage->Init();
 
-			newMaterial->addItem((CMSP&)MatStage);
+			newMaterial->addItem(MatStage);
 		
 #else //NO_MULTISTAGE_RENDERING
 			// if no material stages, add texture to material directly
@@ -444,7 +444,7 @@ int BinMeshLoader::ReadFile(Mesh *pMesh)
 			}
 		}
 
-		pMesh->addItem((CMSP&)newgroup);
+		pMesh->addItem(newgroup);
 	}
 
 	OtherDataStruct datasize;
@@ -628,18 +628,18 @@ int BinMeshLoader::ReadFile(ModernMesh *pMesh)
 
 			if(stagedesc.mTexture != "empty")
 			{
-				auto& texfileManager = KigsCore::Singleton<TextureFileManager>();
+				auto texfileManager = KigsCore::Singleton<TextureFileManager>();
 				SP<Texture> Tex = texfileManager->GetTexture(stagedesc.mTexture, false);
 				Tex->setValue(LABEL_TO_ID(ForcePow2),true);
 				Tex->Init();
 
-				MatStage->addItem((CMSP&)Tex);
+				MatStage->addItem(Tex);
 				
 			}
 
 			MatStage->Init();
 
-			newMaterial->addItem((CMSP&)MatStage);
+			newMaterial->addItem(MatStage);
 	
 #else //NO_MULTISTAGE_RENDERING
 			// if no material stages, add texture to material directly
@@ -1181,7 +1181,7 @@ int BinMeshLoader::ReadFile(ModernMesh *pMesh)
 
 
 		SP<ModernMeshItemGroup> created=pMesh->EndMeshGroup();
-		created->addItem((CMSP&)currentgrp.mMaterial);
+		created->addItem(currentgrp.mMaterial);
 	}
 
 

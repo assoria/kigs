@@ -75,8 +75,8 @@ public:
 protected:
 
 	inline bool	IsAllSonsVisible() { return isUserFlagSet(AllSonsVisible); }
-	inline void	SetAllSonsVisible() { isUserFlagSet(AllSonsVisible); }
-	inline void	UnsetAllSonsVisible() { isUserFlagSet(AllSonsVisible); }
+	inline void	SetAllSonsVisible() { setUserFlag(AllSonsVisible); }
+	inline void	UnsetAllSonsVisible() { unsetUserFlag(AllSonsVisible); }
 
 private:
 	maUInt mShow = BASE_ATTRIBUTE(Show, UINT_MAX);

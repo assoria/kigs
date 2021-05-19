@@ -10,6 +10,7 @@
 #include <string>
 #include <tuple>
 #include <unordered_map>
+#include <unordered_set>
 #include <memory>
 
 template<class T, class T2>
@@ -98,8 +99,11 @@ inline constexpr u32 bits_required(T min_value, T max_value)
 
 #define CHECK_SERIALIZE(a) if(!a) return false;
 #define CHECK_SERIALIZE_VER(ver, a) if(loaded_version >= ver) if(!a) return false;
+#define CHECK_SERIALIZE_VERSION_RANGE(ver_start, ver_end, a) if(loaded_version >= ver_start && loaded_version <= ver_end) if(!a) return false;
+
 #define CO_CHECK_SERIALIZE(a) if(!a) co_return false;
 #define CO_CHECK_SERIALIZE_VER(ver, a) if(loaded_version >= ver) if(!a) co_return false;
+#define CO_CHECK_SERIALIZE_VERSION_RANGE(ver_start, ver_end, a) if(loaded_version >= ver_start && loaded_version <= ver_end) if(!a) co_return false;
 
 
 #define SERIALIZE_VERSION(stream, ver) const u16 current_version = ver;\
@@ -249,21 +253,32 @@ namespace serializer_detail
 
 		CHECK_SERIALIZE(serialize(stream, count));
 
+		using key_type = std::remove_cv_t<typename T::key_type>;
 		if constexpr (!PacketStream::IsWriting)
 		{
+			std::unordered_set<key_type> keys_to_erase;
+			for (auto& [key, value] : range)
+			{
+				keys_to_erase.insert(key);
+			}
 			for (u64 i = 0; i < count; ++i)
 			{
-				std::remove_cv_t<typename T::key_type> key;
+				key_type key;
 				CHECK_SERIALIZE(serialize_object(stream, key));
 				auto& value = range[key];
 				CHECK_SERIALIZE(serialize_object(stream, value));
+				keys_to_erase.erase(key);
+			}
+			for (auto& key : keys_to_erase)
+			{
+				range.erase(key);
 			}
 		}
 		else
 		{
 			for (auto& it : range)
 			{
-				std::remove_cv_t<typename T::key_type> key = it.first;
+				key_type key = it.first;
 				CHECK_SERIALIZE(serialize_object(stream, key));
 				CHECK_SERIALIZE(serialize_object(stream, it.second));
 			}
@@ -282,12 +297,13 @@ namespace serializer_detail
 		}
 
 		CHECK_SERIALIZE(serialize(stream, count));
-
+		using key_type = std::remove_cv_t<typename T::key_type>;
 		if constexpr (!PacketStream::IsWriting)
 		{
+			range.clear();
 			for (u64 i = 0; i < count; ++i)
 			{
-				std::remove_cv_t<typename T::key_type> value;
+				key_type value;
 				CHECK_SERIALIZE(serialize_object(stream, value));
 				range.insert(std::move(value));
 			}
@@ -331,16 +347,6 @@ namespace serializer_detail
 template<typename T, typename PacketStream, typename ... Args>
 bool serialize_object(PacketStream& stream, T& value, Args&& ... args)
 {
-#ifdef WIN32
-	if constexpr (!PacketStream::IsWriting && is_detected_v<has_allocator_type, T>)
-	{
-		if constexpr (std::is_same_v<std::pmr::polymorphic_allocator<typename T::value_type>, typename T::allocator_type>)
-		{
-			if (stream.memory_resource)
-				value = { std::pmr::polymorphic_allocator<typename T::value_type>(stream.memory_resource) };
-		}
-	}
-#endif
 	if constexpr (is_detected_v<has_member_serialize, T, PacketStream>)
 	{
 		return value.Serialize(stream, FWD(args)...);
@@ -623,9 +629,6 @@ struct BasePacketReadStream
 	std::vector<u32> backing_buffer;
 
 	void* user_data = nullptr;
-#ifdef WIN32
-	std::pmr::memory_resource* memory_resource = nullptr;
-#endif
 };
 
 using PacketReadStream = BasePacketReadStream<BitUnpacker>;

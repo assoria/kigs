@@ -54,20 +54,27 @@ void OpenGLRenderingScreen::FetchDepth(int x, int y, int width, int height, unsi
 
 void	OpenGLRenderingScreen::Resize(kfloat sizeX, kfloat sizeY)
 {
-	// before screen is init, only update sizeX and sizeY
-	if (!IsInit())
-	{
-		mSize = v2f(sizeX,sizeY);
-	}
-	else
-	{
-		//When resizing an offscreen surface, we keep the big surface but we let the camera clip the scene
-		InitializeGL((int)sizeX, (int)sizeY);
-	}
-
 	if (mResizeDesignSize)
 	{
-		mDesignSize = (v2f)mSize;
+		mDesignSize = v2f(sizeX,sizeY);
+	}
+	mSize = v2f(sizeX, sizeY);
+	if (IsInit())
+	{
+		//When resizing an offscreen surface, we keep the big surface but we let the camera clip the scene
+		//InitializeGL((int)sizeX, (int)sizeY);
+#ifdef NO_DELAYED_INIT
+		DelayedInit();
+#else
+		CoreModifiableAttribute* delayed = getAttribute("DelayedInit");
+		if (delayed) // delayed init already asked
+		{
+			return;
+		}
+		// ask for delayed init
+		CoreModifiableAttribute* newAttr = AddDynamicAttribute(ATTRIBUTE_TYPE::BOOL, "DelayedInit");
+		newAttr->setValue(true);
+#endif
 	}
 
 	RecomputeDesignCoef();
@@ -336,7 +343,13 @@ void	OpenGLRenderingScreen::DelayedInit()
 
 	if (mUseFBO)
 	{
-		glGetIntegerv(GL_FRAMEBUFFER_BINDING, &mDefaultFrameBuffer); CHECK_GLERROR;
+		glGetIntegerv(GL_FRAMEBUFFER_BINDING, (GLint*)&mDefaultFrameBuffer); CHECK_GLERROR;
+
+		if (mFBOFrameBufferID != 0xffffffff)
+			glDeleteFramebuffers(1, &mFBOFrameBufferID);
+
+		if (mFBODepthBufferID != 0xffffffff)
+			glDeleteRenderbuffers(1, &mFBODepthBufferID);
 
 		glGenFramebuffers(1, &mFBOFrameBufferID); CHECK_GLERROR;
 		int zbits = (int)mBitsPerZ;
@@ -350,8 +363,11 @@ void	OpenGLRenderingScreen::DelayedInit()
 
 
 		// create texture with fbo
-		auto& texfileManager = KigsCore::Singleton<TextureFileManager>();
-		mFBOTexture = texfileManager->CreateTexture(getName());
+		auto texfileManager = KigsCore::Singleton<TextureFileManager>();
+		if (!mFBOTexture)
+			mFBOTexture = texfileManager->CreateTexture(getName());
+		else
+			mFBOTexture->UnInit();
 		mFBOTexture->setValue("Width", mSize[0]);
 		mFBOTexture->setValue("Height", mSize[1]);
 		mFBOTexture->InitForFBO();

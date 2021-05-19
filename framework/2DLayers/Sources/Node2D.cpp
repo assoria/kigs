@@ -356,7 +356,8 @@ void	Node2D::InitModifiable()
 		mCustomShader.changeNotificationLevel(Owner);
 		
 		ChangeNodeFlag(Node2D_UseCustomShader, ((std::string)mCustomShader != ""));
-
+		if (mParent)
+			mParent->SetNodeFlag(Node2D_SonPriorityChanged);
 		CoreModifiable::InitModifiable();
 	}
 }

@@ -85,7 +85,7 @@ void DataDrivenSequence::InitModifiable()
 
 	CoreModifiable::InitModifiable();
 
-	CMSP& currentSequence = currentManager->GetCurrentSequence();
+	CMSP currentSequence = currentManager->GetCurrentSequence();
 
 	// first search for a transition
 	kstl::vector<CMSP>	instances;
@@ -198,7 +198,7 @@ void DataDrivenTransition::InitModifiable()
 		return;
 	}
 	mIsFirstUpdate = true;
-	CMSP& currentSequence = currentManager->GetCurrentSequence();
+	CMSP currentSequence = currentManager->GetCurrentSequence();
 	mPreviousSequence = currentSequence;
 	
 	mPrevLauncherList.clear();
@@ -433,13 +433,13 @@ void DataDrivenBaseApplication::ProtectedPreInit()
 	DECLARE_FULL_CLASS_INFO(KigsCore::Instance(), DataDrivenSequence, DataDrivenSequence, Core)
 	DECLARE_FULL_CLASS_INFO(KigsCore::Instance(), DataDrivenSequenceManager, DataDrivenSequenceManager, Core)
 	
-	auto& pathManager = KigsCore::Singleton<FilePathManager>();
+	auto pathManager = KigsCore::Singleton<FilePathManager>();
 	pathManager->LoadPackage("Assets.kpkg");
 }
 
 void DataDrivenBaseApplication::ProtectedInit()
 {
-	auto& pathManager = KigsCore::Singleton<FilePathManager>();
+	auto pathManager = KigsCore::Singleton<FilePathManager>();
 	bool has_kpkg = pathManager->GetLoadedPackage("Assets.kpkg");
 
 	// load an anonymous CoreModifiableInstance containing global params
@@ -482,7 +482,7 @@ void DataDrivenBaseApplication::ProtectedInit()
 	// localization init ?
 	if (AppInit->getValue("LocalizationInitFile", tmpFilename))
 	{
-		auto& theLocalizationManager = KigsCore::Singleton<LocalizationManager>();
+		auto theLocalizationManager = KigsCore::Singleton<LocalizationManager>();
 		theLocalizationManager->InitWithConfigFile(tmpFilename);
 		AppInit->RemoveDynamicAttribute("LocalizationInitFile");
 	}
@@ -631,7 +631,7 @@ void DataDrivenBaseApplication::CreateSequenceManager()
 	mSequenceManager= KigsCore::GetInstanceOf("AppSequenceManager", "DataDrivenSequenceManager");
 	mSequenceManager->Init();
 	RemoveAutoUpdate(mSequenceManager.get());
-	aggregateWith((CMSP&)mSequenceManager);
+	aggregateWith(mSequenceManager);
 }
 
 void DataDrivenBaseApplication::setInTransition(DataDrivenTransition* transition, bool active)
@@ -735,7 +735,7 @@ void DataDrivenBaseApplication::ProtectedClose()
 	
 	mSequenceManager->UnInit();
 
-	removeAggregateWith((CMSP&)mSequenceManager);
+	removeAggregateWith(mSequenceManager);
 	mSequenceManager = nullptr;
 
 	KigsCore::ReleaseSingleton("FilePathManager");
