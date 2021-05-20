@@ -56,6 +56,10 @@ bool AMRule::treat(FileStruct& f, RulesContext& ctx,bool forceAction)
 	if (doAction)
 	{
 		std::string action = ctx.parse(mAction);
+		if (ctx.isVerbose())
+		{
+			printf("Action: %s\n", action.c_str());
+		}
 		system(action.c_str());
 		return true;
 	}
@@ -80,6 +84,10 @@ bool AMRule::action(RulesContext& ctx, bool forceAction, bool somethingChanged)
 	if (doAction)
 	{
 		std::string action = ctx.parse(mAction);
+		if (ctx.isVerbose())
+		{
+			printf("Action: %s\n", action.c_str());
+		}
 		system(action.c_str());
 		return true;
 	}

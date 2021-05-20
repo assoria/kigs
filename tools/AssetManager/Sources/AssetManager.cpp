@@ -95,6 +95,11 @@ void	AssetManager::ProtectedInit()
 				mPlatform = (*itArgs);
 			}
 			break;
+			case 'v':
+			{
+				mVerbose = true;
+			}
+			break;
 			default:
 				break;
 			}
@@ -168,11 +173,12 @@ void	AssetManager::ProtectedClose()
 void	AssetManager::usage()
 {
 	printf("Usage : \n");
-	printf("AssetManager -i inputFolder -o outputPackage -t intermFolder [-p platform]\n\n");
+	printf("AssetManager -i inputFolder -o outputPackage -t intermFolder [-p platform] [-v] \n\n");
 	printf("-i inputFolder : path of the folder where to find raw assets\n");
 	printf("-o outputFolder : path of ouput folder where to set transformed assets\n");
 	printf("-t intermFolder : path of an intermediary folder\n");
 	printf("-p platform : platform appended to AssetManagerRules filename \n");
+	printf("-v : verbose mode \n");
 
 	printf("inputFolder should contains raw assets and AssetManagerRules[platform].json\n");
 	printf("check associated documentation for AssetManagerRules[platform].json format\n");
@@ -340,6 +346,7 @@ void	AssetManager::removeFileStructFromlistUsingPattern(const std::string& patte
 void	AssetManager::runRules()
 {
 	RulesContext	context(mFolderIn, mFolderInterm, mFolderOut);
+	context.setVerbose(mVerbose);
 	// rules are sorted by priority
 	bool	SomethingChanged = false;
 
@@ -377,6 +384,11 @@ void	AssetManager::runRules()
 				}
 			}
 		}
+	}
+
+	if ((!SomethingChanged) && mVerbose)
+	{
+		printf("AssetManager : nothing changed\n");
 	}
 }
 

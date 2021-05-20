@@ -59,6 +59,7 @@ protected:
 	std::vector<FileStruct>			mFileList;
 	bool							mJobIsDone = false;
 	bool							mResetAll = false;
+	bool							mVerbose = false;
 
 	std::vector<AMRule>				mRules;
 
