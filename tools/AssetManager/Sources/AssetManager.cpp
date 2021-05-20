@@ -108,7 +108,7 @@ void	AssetManager::ProtectedInit()
 	}
 		// check if rules are presents
 
-	auto& pathManager = KigsCore::Singleton<FilePathManager>();
+	auto pathManager = KigsCore::Singleton<FilePathManager>();
 
 	std::string fullRulesPath = mFolderIn + "\\AssetManagerRules" + mPlatform + ".json";
 
@@ -147,7 +147,7 @@ void	AssetManager::ProtectedUpdate()
 	if (mJobIsDone)
 	{
 
-		auto& pathManager = KigsCore::Singleton<FilePathManager>();
+		auto pathManager = KigsCore::Singleton<FilePathManager>();
 		auto filenamehandle = pathManager->FindFullName(mFolderIn + "\\AMLastDone.txt");
 
 		Platform_fopen(filenamehandle.get(), "wt");
