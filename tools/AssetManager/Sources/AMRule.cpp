@@ -32,27 +32,6 @@ bool AMRule::treat(FileStruct& f, RulesContext& ctx,bool forceAction)
 	std::string out = ctx.parse(mOutput);
 	bool doAction = forceAction || (out.length()==0);
 
-	if (!doAction) // need to check date ?
-	{
-		// check out date
-		WIN32_FIND_DATAA wfd;
-
-		HANDLE			hFind;
-		hFind = ::FindFirstFileA(out.c_str(), &wfd);
-
-		if (hFind != INVALID_HANDLE_VALUE)
-		{
-			if (getLargeInteger(&f.mFileInfos.ftLastWriteTime).QuadPart > getLargeInteger(&wfd.ftLastWriteTime).QuadPart)
-			{
-				doAction = true;
-			}
-		}
-		else // out file does not exist ? then we have to create it
-		{
-			doAction = true;
-		}
-	}
-
 	if (doAction)
 	{
 		std::string action = ctx.parse(mAction);
