@@ -6,10 +6,13 @@
 #include "usString.h"
 #include "TecLibs/Tec3D.h"
 
-class CoreItem;
-class CoreItemIterator;
+
 class CoreModifiable;
 class CoreModifiableAttribute;
+class CoreItemIteratorBase;
+class CoreItemIterator;
+class CoreItem;
+
 
 // ****************************************
 // * CoreItemSP class
@@ -22,121 +25,82 @@ class CoreModifiableAttribute;
 */
 // ****************************************
 
-class CoreItemSP : public SmartPointer<CoreItem>
+
+class CoreItemSP : public std::shared_ptr<CoreItem>
 {
 public:
+	using std::shared_ptr<CoreItem>::shared_ptr;
 
-	// constructors
-	// fast init with value 
-	CoreItemSP(const bool& value); 
-	CoreItemSP(const kfloat& other);
-	CoreItemSP(const int& other);
-	CoreItemSP(const unsigned int& other);
-	CoreItemSP(const s64& other);
-	CoreItemSP(const u64& other);
-	CoreItemSP(const kstl::string& other,CoreModifiable* owner=nullptr);
-	CoreItemSP(const char* other, CoreModifiable* owner = nullptr) : CoreItemSP(kstl::string(other), owner)
+	// Auto cast
+	template<typename U>
+	operator SmartPointer<U>()
 	{
+		return debug_checked_pointer_cast<U>(*this);
 	}
-	CoreItemSP(const usString& other, CoreModifiable* owner = nullptr);
-	CoreItemSP(const Point2D& other);
-	CoreItemSP(const Point3D& other);
-	CoreItemSP(const Vector4D& other);
 
-	// other constructors
-	CoreItemSP() : SmartPointer<CoreItem>(nullptr){}
-	CoreItemSP(CoreItem* it, StealRefTag stealref) : SmartPointer<CoreItem>(it, stealref) {}
-	CoreItemSP(CoreItem* it, GetRefTag getref) : SmartPointer<CoreItem>(it, getref) {}
-	CoreItemSP(std::nullptr_t) : SmartPointer<CoreItem>(nullptr) {}
-
-	explicit operator CoreItem&()
+	explicit operator CoreItem& ()
 	{
 		return *get();
 	}
+	
+	CoreItemSP(const bool&);
+	CoreItemSP(const float&);
+	CoreItemSP(const double&);
+	CoreItemSP(const s32&);
+	CoreItemSP(const u32&);
+	CoreItemSP(const s64&);
+	CoreItemSP(const u64&);
+	CoreItemSP(const v2f&);
+	CoreItemSP(const v3f&);
+	CoreItemSP(const v4f&);
 
-	inline CoreItemSP operator[](int i) const;
+	CoreItemSP(const std::string&, CoreModifiable* owner = nullptr);
+	CoreItemSP(const char*, CoreModifiable* owner = nullptr);
+	CoreItemSP(const usString&, CoreModifiable* owner=nullptr);
 
-	inline CoreItemSP operator[](const char* key) const;
 
-	inline CoreItemSP operator[](const kstl::string& key) const;
+	CoreItemSP operator[](int i) const;
+	CoreItemSP operator[](const char* key) const;
+	CoreItemSP operator[](const std::string& key) const;
+	CoreItemSP operator[](const usString& key) const;
 
-	inline CoreItemSP operator[](const usString& key) const;
-
-	inline operator bool() const;
-
-	inline operator float() const;
-
-	inline operator double() const;
-
-	inline operator int() const;
-
-	inline operator s64() const;
-
-	inline operator unsigned int() const;
-
-	inline operator u64() const;
-
-	inline operator kstl::string() const;
-
-	inline operator usString() const;
-
-	inline operator Point2D() const;
-
-	inline operator Point3D() const;
-
-	inline operator Vector4D() const;
-
-	inline bool operator==(const CoreItemSP& other) const;
-
-	inline bool operator==(const CoreItem& other) const;
-
-	inline CoreItemSP& operator=(std::nullptr_t);
-
-	static	CoreItemSP	getCoreMap();
-	static	CoreItemSP	getCoreVector();
-	static  CoreItemSP	getCoreValue(int i);
-	static  CoreItemSP	getCoreValue(float f);
-	static  CoreItemSP	getCoreValue(const kstl::string& s);
-	static  CoreItemSP	getCoreValue(const usString& s);
-
-	template<typename smartPointOn, typename ... Args>
-	static CoreItemSP getCoreItemOfType(Args&& ... args)
-	{
-		return CoreItemSP(new smartPointOn(std::forward<decltype(args)>(args)...), StealRefTag{});
-	}
-
+	// NOTE(antoine) shared_ptr already has a bool operator which is commonly used in patterns like this : if(myCoreItemSP) { doSomething... }
+	//operator bool() const;
+	operator float() const;
+	operator double() const;
+	operator int() const;
+	operator unsigned int() const;
+	operator s64() const;
+	operator u64() const;
+	operator std::string() const;
+	operator usString() const;
+	operator v2f() const;
+	operator v3f() const;
+	operator v4f() const;
 
 	CoreItemIterator begin() const;
 	CoreItemIterator end() const;
-
 };
 
-// ****************************************
-// * CoreItemIteratorBase class
-// * --------------------------------------
-/**
-* \class	CoreItemIteratorBase
-* \file     CoreItem.h
-* \ingroup Core
-* \brief	Base class for CoreItemIterator
-*/
-// ****************************************
-class CoreItemIteratorBase : public GenericRefCountedBaseClass
+
+
+class CoreItemIteratorBase : public std::enable_shared_from_this<CoreItemIteratorBase>
 {
 public:
-
-	CoreItemIteratorBase() : GenericRefCountedBaseClass()
-		,mAttachedCoreItem(nullptr)
-		, mPos(0xFFFFFFFF)
+	CoreItemIteratorBase() : mAttachedCoreItem(nullptr), mPos(0xFFFFFFFF)
 	{
 		
 	}
 
-	CoreItemIteratorBase(const CoreItemIteratorBase& other) : GenericRefCountedBaseClass()
-		,mAttachedCoreItem(other.mAttachedCoreItem)
-		, mPos(other.mPos)
+	CoreItemIteratorBase(const CoreItemIteratorBase& other) : mAttachedCoreItem(other.mAttachedCoreItem), mPos(other.mPos)
 	{
 
+	}
+
+	virtual CoreItemIteratorBase* clone()
+	{
+		CoreItemIteratorBase* result = new CoreItemIteratorBase(mAttachedCoreItem, mPos);
+		return result;
 	}
 
 	virtual CoreItemSP operator*() const;
@@ -182,7 +146,7 @@ public:
 		return false;
 	}
 	
-	virtual bool	getKey(kstl::string& returnedkey)
+	virtual bool	getKey(std::string& returnedkey)
 	{
 		returnedkey = getName();
 		return false;
@@ -194,16 +158,11 @@ public:
 		return false;
 	}
 
-	virtual kstl::string getName() const
+	virtual std::string getName() const
 	{
 		return "";
 	}
 
-	virtual CoreItemIteratorBase*	clone()
-	{
-		CoreItemIteratorBase*	result = new CoreItemIteratorBase(mAttachedCoreItem, mPos);
-		return result;
-	}
 	virtual ~CoreItemIteratorBase()
 	{
 
@@ -211,42 +170,29 @@ public:
 protected:
 
 	friend class CoreItem;
+	friend class CoreItemIterator;
 
-	CoreItemIteratorBase(const CoreItemSP& item, unsigned int pos) : GenericRefCountedBaseClass()
-		, mAttachedCoreItem(item)
-		, mPos(pos)
+	CoreItemIteratorBase(const CoreItemSP& item, unsigned int pos) : mAttachedCoreItem(item), mPos(pos)
 	{
 
 	}
-
 
 	CoreItemSP		mAttachedCoreItem;
 	unsigned int	mPos;
 };
 
-// ****************************************
-// * CoreItemIterator class
-// * --------------------------------------
-/**
-* \class	CoreItemIterator
-* \file     CoreItem.h
-* \ingroup Core
-* \brief	Iterator for all CoreItem classes
-*/
-// ****************************************
-
 class CoreItemIterator : public SmartPointer<CoreItemIteratorBase>
 {
 public:
 
-	CoreItemIterator(CoreItemIteratorBase* point) : SmartPointer<CoreItemIteratorBase>(point, StealRefTag{})
+	CoreItemIterator(CoreItemIteratorBase* point) : SmartPointer<CoreItemIteratorBase>(point)
 	{
 
 	}
 
 	virtual CoreItemSP operator*() const;
 
-	virtual CoreItemIterator& operator=(const CoreItemIterator & other);
+	virtual CoreItemIterator& operator=(const CoreItemIterator& other);
 
 	virtual CoreItemIterator& operator+(const int decal);
 
@@ -254,11 +200,11 @@ public:
 
 	virtual CoreItemIterator operator++(int);
 
-	virtual bool operator==(const CoreItemIterator & other) const;
+	virtual bool operator==(const CoreItemIterator& other) const;
 
-	virtual bool operator!=(const CoreItemIterator & other) const;
+	virtual bool operator!=(const CoreItemIterator& other) const;
 
-	virtual bool	getKey(kstl::string& returnedkey);
+	virtual bool	getKey(std::string& returnedkey);
 
 	virtual bool	getKey(usString& returnedkey);
 
@@ -266,7 +212,6 @@ protected:
 
 
 };
-
 
 // ****************************************
 // * CoreItem class
@@ -294,13 +239,32 @@ public:
 	};
 
 	virtual void set(int key, const CoreItemSP& toinsert) {};
-	virtual void set(const kstl::string& key, const CoreItemSP& toinsert) {};
+	virtual void set(const std::string& key, const CoreItemSP& toinsert) {};
 	virtual void set(const usString& key, const CoreItemSP& toinsert) {};
 
 	virtual void erase(int key) {};
-	virtual void erase(const kstl::string& key) {};
+	virtual void erase(const std::string& key) {};
 	virtual void erase(const usString& key) {};
 
+	CoreItemSP SharedFromThis() 
+	{ 
+#ifdef _DEBUG
+		try
+		{
+			return debug_checked_pointer_cast<CoreItem>(shared_from_this());
+		}
+		catch (const std::bad_weak_ptr&)
+		{
+			// NOTE(antoine) : Possible reasons :
+			// It's forbidden to call shared_from_this inside the constructor
+			// If the object was new'ed manually and not yet assigned to a shared_ptr, consider using the Make* functions below instead, or std::make_shared/MakeRefCounted
+			__debugbreak();
+		}
+		return nullptr;
+#else
+		return debug_checked_pointer_cast<CoreItem>(shared_from_this());
+#endif	
+	}
 
 	typedef size_t size_type;
 
@@ -322,12 +286,12 @@ public:
 	// bug in VC++ can not have explicit virtual cast operator
 	explicit
 #endif
-	virtual operator kstl::string() const;
+	virtual operator std::string() const;
 
 	virtual operator usString() const;
-	virtual operator Point2D() const;
-	virtual operator Point3D() const;
-	virtual operator Vector4D() const;
+	virtual operator v2f() const;
+	virtual operator v3f() const;
+	virtual operator v4f() const;
 
 	bool getValue(bool& _value) const {
 		_value = (bool)*this;
@@ -356,24 +320,24 @@ public:
 		return true;
 	}
 
-	bool getValue(kstl::string& _value) const {
-		_value = (kstl::string)*this;
+	bool getValue(std::string& _value) const {
+		_value = (std::string)*this;
 		return true; }
 
 	bool getValue(usString& _value) const {
 		_value = (usString)*this;
 		return true; }
 
-	bool getValue(Point2D& _value) const {
-		_value = (Point2D)*this;
+	bool getValue(v2f& _value) const {
+		_value = (v2f)*this;
 		return true; }
 
-	bool getValue(Point3D& _value) const {
-		_value = this->operator Point3D();
+	bool getValue(v3f& _value) const {
+		_value = this->operator v3f();
 		return true; }
 
-	bool getValue(Vector4D& _value) const {
-		_value = this->operator Vector4D();
+	bool getValue(v4f& _value) const {
+		_value = this->operator v4f();
 		return true;
 	}
 
@@ -389,13 +353,13 @@ public:
 	virtual CoreItem& operator=(const s64& other);
 	virtual CoreItem& operator=(const unsigned int& other);
 	virtual CoreItem& operator=(const u64& other);
-	virtual CoreItem& operator=(const kstl::string& other);
+	virtual CoreItem& operator=(const std::string& other);
 	virtual CoreItem& operator=(const usString& other);
-	virtual CoreItem& operator=(const Point2D& other);
-	virtual CoreItem& operator=(const Point3D& other);
-	virtual CoreItem& operator=(const Vector4D& other);
+	virtual CoreItem& operator=(const v2f& other);
+	virtual CoreItem& operator=(const v3f& other);
+	virtual CoreItem& operator=(const v4f& other);
 
-	virtual kstl::string toString() const { return ""; }
+	virtual std::string toString() const { return ""; }
 	
 	virtual bool empty() const
 	{
@@ -417,31 +381,27 @@ public:
 	COREITEM_TYPE	GetType() const {return mType;}
 
 	// operator [] needs to be overloaded on vectors and maps
-	virtual CoreItemSP operator[](int i) const;
+	virtual CoreItemSP operator[](int i);
 
-	CoreItemSP operator[](const char* key) const
+	CoreItemSP operator[](const char* key)
 	{
-		return (*this)[kstl::string(key)];
+		return (*this)[std::string(key)];
 	}
 
-	virtual CoreItemSP operator[](const kstl::string& key) const;
+	virtual CoreItemSP operator[](const std::string& key);
 
-	virtual CoreItemSP operator[](const usString& key) const;
+	virtual CoreItemSP operator[](const usString& key);
 
 	// operator [] needs to be overloaded on vectors and maps
 
 	virtual CoreItemIterator begin()
 	{
-		CoreItemIteratorBase* iter = new CoreItemIteratorBase(CoreItemSP(this, GetRefTag{}), 0);
-		CoreItemIterator	toReturn(iter);
-		return toReturn;
+		return CoreItemIterator(new CoreItemIteratorBase(SharedFromThis(), 0));
 	}
 
 	virtual CoreItemIterator end()
 	{
-		CoreItemIteratorBase* iter = new CoreItemIteratorBase(CoreItemSP(this, GetRefTag{}), 0xFFFFFFFF);
-		CoreItemIterator	toReturn(iter);
-		return toReturn;
+		return CoreItemIterator(new CoreItemIteratorBase(SharedFromThis(), 0xFFFFFFFF));
 	}
 
 	virtual void*	getContainerStruct() = 0;
@@ -471,7 +431,7 @@ protected:
 class CoreNamedItem : public CoreItem
 {
 protected:
-	CoreNamedItem(COREITEM_TYPE _type,const kstl::string& _name) : CoreItem(_type),mName(_name)
+	CoreNamedItem(COREITEM_TYPE _type,const std::string& _name) : CoreItem(_type),mName(_name)
 	{
 		
 	}
@@ -481,135 +441,161 @@ protected:
 		
 	}
 public:
-	virtual kstl::string getName() const
+	virtual std::string getName() const
 	{
 		return mName;
 	}
 
-	void	setName(const kstl::string& _name)
+	void	setName(const std::string& _name)
 	{
 		mName=_name;
 	}
 
 
-	virtual CoreItemSP operator[](const kstl::string& key) const;
+	virtual CoreItemSP operator[](const std::string& key);
 
-	virtual CoreItemSP operator[](const usString& key) const;
+	virtual CoreItemSP operator[](const usString& key);
 
 
 protected:
-	kstl::string	mName;
+	std::string	mName;
 };
+
+
+#define DECLARE_MAKE_COREVALUE(type) CoreItemSP MakeCoreValue(type value);\
+CoreItemSP MakeCoreNamedValue(type value, const std::string& name);\
+
+CoreItemSP MakeCoreMap();
+CoreItemSP MakeCoreNamedMap(const std::string& name);
+CoreItemSP MakeCoreMapUS();
+CoreItemSP MakeCoreNamedMapUS(const std::string& name);
+CoreItemSP MakeCoreVector();
+CoreItemSP MakeCoreNamedVector(const std::string& name);
+
+DECLARE_MAKE_COREVALUE(const bool&);
+DECLARE_MAKE_COREVALUE(const s32&);
+DECLARE_MAKE_COREVALUE(const u32&);
+DECLARE_MAKE_COREVALUE(const s64&);
+DECLARE_MAKE_COREVALUE(const u64&);
+DECLARE_MAKE_COREVALUE(const float&);
+DECLARE_MAKE_COREVALUE(const double&);
+DECLARE_MAKE_COREVALUE(const v2f&);
+DECLARE_MAKE_COREVALUE(const v3f&);
+DECLARE_MAKE_COREVALUE(const v4f&);
+
+CoreItemSP MakeCoreValue(const std::string& value, CoreModifiable* owner = nullptr);
+CoreItemSP MakeCoreValue(const usString& value, CoreModifiable* owner = nullptr);
+CoreItemSP MakeCoreValue(const char* value, CoreModifiable* owner = nullptr);
+
+template<typename smartPointOn, typename ... Args>
+CoreItemSP MakeCoreItemOfType(Args&& ... args)
+{
+	return std::make_shared<smartPointOn>(std::forward<decltype(args)>(args)...);
+}
+
 
 
 // operator [] needs to be overloaded on vectors and maps
 inline CoreItemSP CoreItemSP::operator[](int i) const
 {
-	if(mPointer)
-		return mPointer->operator[](i);
+	if(get())
+		return get()->operator[](i);
 
 	return nullptr;
 }
 
 inline CoreItemSP CoreItemSP::operator[](const char* key) const
 {
-	if (mPointer)
-		return mPointer->operator[](key);
+	if (get())
+		return get()->operator[](key);
 
 	return nullptr;
 }
 
-inline CoreItemSP CoreItemSP::operator[](const kstl::string& key) const
+inline CoreItemSP CoreItemSP::operator[](const std::string& key) const
 {
-	if (mPointer)
-		return mPointer->operator[](key);
+	if (get())
+		return get()->operator[](key);
 
 	return nullptr;
 }
 
 inline CoreItemSP CoreItemSP::operator[](const usString& key) const
 {
-	if (mPointer)
-		return mPointer->operator[](key);
+	if (get())
+		return get()->operator[](key);
 
 	return nullptr;
 }
 
-inline CoreItemSP::operator bool() const
+/*inline CoreItemSP::operator bool() const
 {
-	return mPointer->operator bool();
-}
+	return get()->operator bool();
+}*/
 
 inline CoreItemSP::operator float() const
 {
-	return mPointer->operator kfloat();
+	return get()->operator kfloat();
 }
 
 inline CoreItemSP::operator double() const
 {
-	return mPointer->operator double();
+	return get()->operator double();
 }
 
 inline CoreItemSP::operator int() const
 {
-	return mPointer->operator int();
+	return get()->operator int();
 }
 
 inline CoreItemSP::operator unsigned int() const
 {
-	return mPointer->operator unsigned int();
+	return get()->operator unsigned int();
 }
 
 inline CoreItemSP::operator s64() const
 {
-	return mPointer->operator s64();
+	return get()->operator s64();
 }
 
 inline CoreItemSP::operator u64() const
 {
-	return mPointer->operator u64();
+	return get()->operator u64();
 }
 
-inline CoreItemSP::operator kstl::string() const
+inline CoreItemSP::operator std::string() const
 {
-	return mPointer->operator kstl::string();
+	return get()->operator std::string();
 }
 
 inline CoreItemSP::operator usString() const
 {
-	return mPointer->operator usString();
+	return get()->operator usString();
 }
 
-inline CoreItemSP::operator Point2D() const
+inline CoreItemSP::operator v2f() const
 {
-	return mPointer->operator Point2D();
+	return get()->operator v2f();
 }
 
-inline CoreItemSP::operator Point3D() const
+inline CoreItemSP::operator v3f() const
 {
-	return mPointer->operator Point3D();
+	return get()->operator v3f();
 } 
 
-inline CoreItemSP::operator Vector4D() const
+inline CoreItemSP::operator v4f() const
 {
-	return mPointer->operator Vector4D();
+	return get()->operator v4f();
 }
 
-inline bool CoreItemSP::operator==(const CoreItemSP& other) const
+inline CoreItemIterator CoreItemSP::begin() const
 {
-	return mPointer->operator==(*other.get());
+	return get()->begin();
 }
 
-inline bool CoreItemSP::operator==(const CoreItem& other) const
+inline CoreItemIterator CoreItemSP::end() const
 {
-	return mPointer->operator==(other);
-}
-
-
-inline CoreItemSP& CoreItemSP::operator=(std::nullptr_t)
-{
-	Reset();
-	return *this;
+	return get()->end();
 }
 
 

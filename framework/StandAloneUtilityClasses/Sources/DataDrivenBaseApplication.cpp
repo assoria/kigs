@@ -99,7 +99,7 @@ void DataDrivenSequence::InitModifiable()
 			if (currentSequence->isSubType(DataDrivenSequence::mClassID))
 			{
 				kstl::map<unsigned int, kstl::string> savedParamsList;
-				((SP<DataDrivenSequence>&)currentSequence)->saveParams(savedParamsList);
+				currentSequence->as<DataDrivenSequence>()->saveParams(savedParamsList);
 				if (savedParamsList.size())
 				{
 					currentManager->mSequenceParametersMap[currentSequence->getName()] = savedParamsList;
@@ -304,7 +304,7 @@ void DataDrivenTransition::Update(const Timer&  timer, void* addParam)
 				if (mPreviousSequence->isSubType(DataDrivenSequence::mClassID))
 				{
 					kstl::map<unsigned int, kstl::string> savedParamsList;
-					((SP<DataDrivenSequence>&)mPreviousSequence)->saveParams(savedParamsList);
+					mPreviousSequence->as<DataDrivenSequence>()->saveParams(savedParamsList);
 					if (savedParamsList.size())
 					{
 						currentManager->mSequenceParametersMap[mPreviousSequence->getName()] = savedParamsList;
@@ -420,14 +420,14 @@ IMPLEMENT_CONSTRUCTOR(DataDrivenBaseApplication)
 
 void DataDrivenBaseApplication::ProtectedPreInit()
 {
-	mGUI = CoreCreateModule(ModuleGUI, 0);
-	mInputModule = CoreCreateModule(ModuleInput, 0);
-	mRenderer = CoreCreateModule(ModuleRenderer, 0);
-	mSceneGraph = CoreCreateModule(ModuleSceneGraph, 0);
-	m2DLayers = CoreCreateModule(Module2DLayers, 0);
+	mGUI = CoreCreateModule(ModuleGUI, 0).get();
+	mInputModule = CoreCreateModule(ModuleInput, 0).get();
+	mRenderer = CoreCreateModule(ModuleRenderer, 0).get();
+	mSceneGraph = CoreCreateModule(ModuleSceneGraph, 0).get();
+	m2DLayers = CoreCreateModule(Module2DLayers, 0).get();
 	CoreCreateModule(ModuleCoreAnimation, 0);
 
-	mLuaModule = CoreCreateModule(LuaKigsBindModule, 0);
+	mLuaModule = CoreCreateModule(LuaKigsBindModule, 0).get();
 
 	DECLARE_FULL_CLASS_INFO(KigsCore::Instance(), DataDrivenTransition, DataDrivenTransition, Core)
 	DECLARE_FULL_CLASS_INFO(KigsCore::Instance(), DataDrivenSequence, DataDrivenSequence, Core)
@@ -598,7 +598,7 @@ void DataDrivenBaseApplication::ProtectedInit()
 
 		mRenderingScreen->setValue("Size", L_ScreenSize);
 
-		ModuleInput* theInputModule = (ModuleInput*)KigsCore::GetModule("ModuleInput");
+		auto theInputModule = KigsCore::GetModule<ModuleInput>();
 		theInputModule->getTouchManager()->addTouchSupport(mRenderingScreen,0);	// root touchsupport
 
 	}

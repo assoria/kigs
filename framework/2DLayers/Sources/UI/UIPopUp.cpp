@@ -20,8 +20,10 @@ void	PopUpUpgrador::Init(CoreModifiable* toUpgrade)
 }
 
 //  remove dynamic attributes and disconnect events
-void	PopUpUpgrador::Destroy(CoreModifiable* toDowngrade)
+void	PopUpUpgrador::Destroy(CoreModifiable* toDowngrade, bool toDowngradeDeleted)
 {
+	if (toDowngradeDeleted) return;
+
 	Hide((UIItem*)toDowngrade);
 
 	KigsCore::GetNotificationCenter()->removeObserver(toDowngrade, "HidePopUp");
@@ -117,9 +119,7 @@ void PopUpUpgrador::Show(UIItem* localthis, CoreModifiable * aActivator)
 	mOpenPopup = true;
 	if (aActivator)
 	{
-		mActivator = aActivator;
-		aActivator->GetRef();
-
+		mActivator = aActivator->SharedFromThis();
 		v3f activeColor;
 		localthis->getValue("ActiveColor", activeColor);
 		mActivator->setValue("Color", activeColor);
@@ -136,7 +136,6 @@ void PopUpUpgrador::Hide(UIItem* localthis)
 		v3f usedColor;
 		localthis->getValue("UsedColor", usedColor);
 		mActivator->setValue("Color", usedColor);
-		mActivator->Destroy();
 		mActivator = nullptr;
 	}
 }

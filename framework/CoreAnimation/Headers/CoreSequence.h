@@ -19,7 +19,7 @@
 class CoreSequence : public CoreVector
 {
 public:
-	CoreSequence(CoreModifiable* target, KigsID name, Timer* reftimer = 0);
+	CoreSequence(CMSP target, KigsID name, Timer* reftimer = 0);
 
 	virtual ~CoreSequence();
 
@@ -58,21 +58,21 @@ public:
 	// reset sequence
 	void	stop();
 
-	CoreModifiable*	getTarget() const
+	CMSP	getTarget() const
 	{
-		return mTarget;
+		return mTarget.lock();
 	}
 
 	// remove the target if already destroyed
 	void removeTarget()
 	{
-		mTarget = NULL;
+		mTarget.reset();
 	}
 
 	// return true if target is modifiable 
 	bool	useModifiable(CoreModifiable* modifiable) const
 	{
-		if (mTarget == modifiable)
+		if (mTarget.lock().get() == modifiable)
 		{
 			return true;
 		}
@@ -85,7 +85,7 @@ protected:
 	void	protectedPause(kdouble time);
 	void	protectedUpdate(kdouble time);
 
-	CoreModifiable*		mTarget;
+	std::weak_ptr<CoreModifiable> mTarget;
 	KigsID				mID;
 	kdouble				mStartTime;
 	kdouble				mPauseTime;

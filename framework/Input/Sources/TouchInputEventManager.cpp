@@ -21,7 +21,7 @@ IMPLEMENT_CONSTRUCTOR(TouchInputEventManager)
 {
 	StackedEventStateStruct	firstOne;
 	mStackedEventState.push_back(firstOne);
-	mTheInputModule = reinterpret_cast<ModuleInput*>(CoreGetModule(ModuleInput));
+	mTheInputModule = (ModuleInput*)CoreGetModule(ModuleInput).get();
 }
 
 bool TouchInputEventManager::isRegisteredOnCurrentState(CoreModifiable* obj)
@@ -330,13 +330,14 @@ void TouchInputEventManager::dumpTouchSupportTrees()
 
 }
 
-void	TouchInputEventManager::removeTouchSupport(CoreModifiable* ts)
+void	TouchInputEventManager::removeTouchSupport(CoreModifiable* ts, bool was_destroyed)
 {
 	std::lock_guard<std::recursive_mutex> lk{ mMutex };
 
 	if (removeTemporaryUnmappedTouchSupport(ts))
 	{
-		KigsCore::Disconnect(ts, "Destroy", this, "OnDestroyTouchSupportCallback");
+		if(!was_destroyed)
+			KigsCore::Disconnect(ts, "Destroy", this, "OnDestroyTouchSupportCallback");
 		return;
 	}
 
@@ -376,9 +377,8 @@ void	TouchInputEventManager::removeTouchSupport(CoreModifiable* ts)
 			{
 				mTouchSupportTreeRootList.erase(itfound);
 			}
-
-			KigsCore::Disconnect(ts, "Destroy", this, "OnDestroyTouchSupportCallback");
-
+			if (!was_destroyed)
+				KigsCore::Disconnect(ts, "Destroy", this, "OnDestroyTouchSupportCallback");
 			break;
 		}
 		++itfound;
@@ -1028,8 +1028,7 @@ void	TouchInputEventManager::LinearCallEventUpdate(kstl::vector<SortedElementNod
 	{
 		if (mDestroyedThisFrame.find(element.element) == mDestroyedThisFrame.end() && mDestroyedThisFrame.find(element.touchSupport) == mDestroyedThisFrame.end())
 		{
-			element.element->GetRef(); // In case a modifiable decide to commit suicide during one of its callbacks
-
+			auto keepalive = element.element->SharedFromThis(); // In case a modifiable decide to commit suicide during one of its callbacks
 			StackedEventStateStruct::EventMapEntry& currentEntry = state.mEventMap[element.element];
 
 			auto	itEvent = currentEntry.mTouchEventStateList.begin();
@@ -1054,7 +1053,6 @@ void	TouchInputEventManager::LinearCallEventUpdate(kstl::vector<SortedElementNod
 				++itEvent;
 			}
 			swallowMask = swallowMaskResult;
-			element.element->Destroy();
 		}
 	}
 }
@@ -1152,7 +1150,7 @@ DEFINE_METHOD(TouchInputEventManager, OnDestroyTouchSupportCallback)
 	if (mInUpdate)
 		mDestroyedThisFrame.insert(sender);
 
-	removeTouchSupport(sender);
+	removeTouchSupport(sender, true);
 	return false;
 }
 

@@ -31,9 +31,11 @@ public:
 	*/
 	UITexturedItem(const kstl::string& name, DECLARE_CLASS_NAME_TREE_ARG);
 
+	virtual ~UITexturedItem();
+
 	bool	HasTexture()
 	{
-		if (!mTexturePointer.isNil())
+		if (mTexturePointer)
 			return mTexturePointer->HasTexture();
 
 		return false;
@@ -41,7 +43,7 @@ public:
 
 	inline void	TransformUV(Point2D* totransform, int count) const
 	{
-		if (mTexturePointer.isNil())
+		if (!mTexturePointer)
 			return;
 
 		const Matrix4x4& mat = mTexturePointer->getUVTexture();
@@ -65,6 +67,8 @@ public:
 	bool	removeItem(const CMSP& item DECLARE_DEFAULT_LINK_NAME) override;
 	
 protected:
+	
+	void InitModifiable() override;
 
 	void	TextureNotifyUpdate(const unsigned int  labelid);
 
@@ -86,8 +90,6 @@ protected:
 
 		return pos;
 	}
-
-	virtual ~UITexturedItem();
 
 	void SetTexUV(UIVerticesInfo * aQI) override;
 

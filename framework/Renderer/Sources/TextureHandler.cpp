@@ -66,11 +66,11 @@ void SpriteSheetData::sortAnimation(CoreItemSP& _FrameVector)
 
 			if (L_map->size())
 			{
-				L_FrameInfo->FramePos_X = L_map["x"];
-				L_FrameInfo->FramePos_Y = L_map["y"];
+				L_FrameInfo->FramePos_X = *L_map["x"];
+				L_FrameInfo->FramePos_Y = *L_map["y"];
 
-				L_FrameInfo->FrameSize_X = L_map["w"];
-				L_FrameInfo->FrameSize_Y = L_map["h"];
+				L_FrameInfo->FrameSize_X = *L_map["w"];
+				L_FrameInfo->FrameSize_Y = *L_map["h"];
 			}
 		}
 
@@ -79,8 +79,8 @@ void SpriteSheetData::sortAnimation(CoreItemSP& _FrameVector)
 
 			if (L_map->size())
 			{
-				L_FrameInfo->SourceSize_X = L_map["w"];
-				L_FrameInfo->SourceSize_Y = L_map["h"];
+				L_FrameInfo->SourceSize_X = *L_map["w"];
+				L_FrameInfo->SourceSize_Y = *L_map["h"];
 			}
 		}
 
@@ -89,17 +89,17 @@ void SpriteSheetData::sortAnimation(CoreItemSP& _FrameVector)
 
 			if (L_map->size())
 			{
-				L_FrameInfo->Decal_X = L_map["x"];
-				L_FrameInfo->Decal_Y = L_map["y"];
+				L_FrameInfo->Decal_X = *L_map["x"];
+				L_FrameInfo->Decal_Y = *L_map["y"];
 			}
 		}
 
 		{
-			L_FrameInfo->Rotated = it["rotated"];
+			L_FrameInfo->Rotated = *it["rotated"];
 		}
 
 		{
-			L_FrameInfo->Trimmed = it["trimmed"];
+			L_FrameInfo->Trimmed = *it["trimmed"];
 		}
 
 		// add in anim list if needed
@@ -128,7 +128,7 @@ bool	SpriteSheetData::Init(const std::string& json, std::string& texturename)
 {
 	JSonFileParser L_JsonParser;
 	CoreItemSP L_Dictionary = L_JsonParser.Get_JsonDictionary(json);
-	if (!L_Dictionary.isNil())
+	if (L_Dictionary)
 	{
 		CoreItemSP	L_vFrames = L_Dictionary["frames"];
 
@@ -136,7 +136,7 @@ bool	SpriteSheetData::Init(const std::string& json, std::string& texturename)
 
 		CoreItemSP L_Meta = L_Dictionary["meta"];
 
-		if (!L_Meta.isNil())
+		if (L_Meta)
 		{
 			texturename = L_Meta["image"]->toString();
 		}
@@ -147,7 +147,7 @@ bool	SpriteSheetData::Init(const std::string& json, std::string& texturename)
 }
 
 //  remove dynamic attributes and disconnect events
-void	SpriteSheetData::Destroy(CoreModifiable* toDowngrade)
+void	SpriteSheetData::Destroy(CoreModifiable* toDowngrade, bool toDowngradeDeleted)
 {
 	
 }
@@ -158,7 +158,7 @@ bool	TextureHandler::initFromSpriteSheet(const std::string& jsonfilename)
 	auto textureManager = KigsCore::Singleton<TextureFileManager>();
 	std::string texturename = textureManager->GetTextureFromSpriteSheetJSON(jsonfilename);
 
-	if (!mTexture.isNil())
+	if (mTexture)
 	{
 		if (mTexture->getValue<std::string>("TextureName") == texturename) // same texture, just returns
 		{
@@ -182,7 +182,7 @@ bool	TextureHandler::initFromSpriteSheet(const std::string& jsonfilename)
 		{
 			mTexture = textureManager->GetTexture(texturename);
 
-			if ((!newspritesheet->isOK()) || mTexture.isNil())
+			if ((!newspritesheet->isOK()) || !mTexture)
 			{
 				delete newspritesheet;
 				newspritesheet = nullptr;
@@ -254,7 +254,7 @@ bool TextureHandler::changeTexture()
 		}
 	}
 
-	if (!mTexture.isNil())
+	if (mTexture)
 	{
 		refreshTextureInfos();
 	
@@ -435,8 +435,10 @@ void	AnimationUpgrador::Init(CoreModifiable* toUpgrade)
 }
 
 //  remove dynamic attributes and disconnect events
-void	AnimationUpgrador::Destroy(CoreModifiable* toDowngrade)
+void	AnimationUpgrador::Destroy(CoreModifiable* toDowngrade, bool toDowngradeDeleted)
 {
+	if (toDowngradeDeleted) return;
+
 	KigsCore::Disconnect(toDowngrade, "NotifyUpdate", toDowngrade, "AnimationNotifyUpdate");
 
 	toDowngrade->RemoveDynamicAttribute("CurrentAnimation");

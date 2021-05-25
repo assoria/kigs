@@ -27,7 +27,7 @@ public:
 	virtual void	Init(CoreModifiable* toUpgrade) override;
 
 	// destroy UpgradorData and remove dynamic attributes 
-	virtual void	Destroy(CoreModifiable* toDowngrade) override;
+	virtual void	Destroy(CoreModifiable* toDowngrade, bool toDowngradeDeleted) override;
 
 	START_UPGRADOR(PopUpUpgrador);
 	UPGRADOR_METHODS(HidePopUp, ShowPopUp);
@@ -40,6 +40,6 @@ protected:
 	// upgrador member variable
 	kdouble mTimeOpen = 0;
 	bool mOpenPopup = false;
-	CoreModifiable* mActivator = nullptr;
+	CMSP mActivator;
 };
 

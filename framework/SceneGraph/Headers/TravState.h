@@ -142,7 +142,7 @@ public:
 	* \fn 		CullingObject* GetCullingObject() const
 	* \return	the culling object
 	*/
-	SP<CullingObject>& GetCullingObject() {return mCullingObject;}
+	SP<CullingObject> GetCullingObject() {return mCullingObject;}
 
 	/**
 	* \brief	get the visible frame
@@ -266,7 +266,7 @@ public:
 	Material*									mCurrentMaterial;
 
 	//! list of current used light
-	kstl::set<CoreModifiable*> *				mLights;
+	kstl::set<CoreModifiable*>*				mLights;
 
 	void	SetHolographicMode(bool isHolo) { mIsHolographic = isHolo; }
 	bool	GetHolographicMode() { return mIsHolographic; }
@@ -279,13 +279,13 @@ public:
 
 	RenderPass* mCurrentPass = nullptr;
 
-protected:
 	/**
 	* \brief	destructor
 	* \fn 		~TravState();
 	*/
 	virtual ~TravState();
 
+protected:
 	//! time
 	kdouble	mTime;
 	//! LOD value

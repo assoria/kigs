@@ -35,7 +35,7 @@ public:
 	// numeric
 	void	CallModifier(CoreModifiableAttribute* caller, bool& value, bool isGetter)
 	{
-		if (isGetterModifier() == isGetter) { ProtectedCallModifier(caller, value); } if (mNextModifier&1) { getNext()->CallModifier(caller, value, isGetter); }
+		if (isGetterModifier() == isGetter) { ProtectedCallModifier(caller, value); } if (mNextModifier & 1) { getNext()->CallModifier(caller, value, isGetter); }
 	};
 	void	CallModifier(CoreModifiableAttribute* caller, s8& value, bool isGetter)
 	{
@@ -107,11 +107,6 @@ public:
 
 	inline bool	isGetterModifier() { return mIsGetter; }
 
-	/*inline void setNext(AttachedModifierBase* nexttoset)
-	{
-		mNextModifier = (uintptr_t)nexttoset;
-	}*/
-
 	inline void setNextObject(uintptr_t nexttoset)
 	{
 		mNextModifier = nexttoset;
@@ -127,7 +122,6 @@ public:
 	{
 		return mNextModifier;
 	}
-
 #ifdef   KEEP_NAME_AS_STRING
 	// for export
 	virtual kstl::string	GetModifierType() = 0;
@@ -162,7 +156,6 @@ protected:
 	virtual void	ProtectedCallModifier(CoreModifiableAttribute* caller, Vector4D& value) {};
 
 	uintptr_t				mNextModifier;
-
 	bool					mIsGetter;
 
 #ifdef   KEEP_NAME_AS_STRING
@@ -181,25 +174,13 @@ public:
 
 	virtual ~CoreItemOperatorModifier()
 	{
-
-		auto itcurrent = mContext.mVariableList.begin();
-		auto itend = mContext.mVariableList.end();
-		while (itcurrent != itend)
-		{
-			if ((*itcurrent).second)
-			{
-				(*itcurrent).second->Destroy();
-			}
-			++itcurrent;
-		}
-
 	}
 
 	virtual void	Init(CoreModifiableAttribute* caller, bool isGetter, const kstl::string& addParam);
 
-	static CoreVector* create()
+	static std::unique_ptr<CoreVector> create()
 	{
-		return new CoreItemOperatorModifier();
+		return std::make_unique<CoreItemOperatorModifier>();
 	}
 
 #ifdef   KEEP_NAME_AS_STRING

@@ -38,16 +38,6 @@
 
 #include "CorePackage.h"
 
-#ifdef KIGS_TOOLS
-#define TRACEREF_RETAIN  kigsprintf("+++ REF ON %p (%s) (%03d>%03d) \n",this, getExactTypeID()._id_name.c_str(), (int)mRefCounter-1, (int)mRefCounter);
-#define TRACEREF_RELEASE kigsprintf("--- REF ON %p (%s) (%03d>%03d) \n",this, getExactTypeID()._id_name.c_str(), (int)mRefCounter, (int)mRefCounter-1);
-#define TRACEREF_DELETE  kigsprintf("### REF ON %p (%s)\n",this, getExactTypeID()._id_name.c_str());
-#else
-#define TRACEREF_RETAIN
-#define TRACEREF_RELEASE
-#define TRACEREF_DELETE
-#endif
-
 std::atomic<unsigned int> CoreModifiable::mUIDCounter{ 0 };
 
 //! auto implement static members
@@ -55,14 +45,11 @@ IMPLEMENT_CLASS_INFO(CoreModifiable);
 
 CoreModifiable::~CoreModifiable()
 {
+	ProtectedDestroy();
+
 	if (isFlagAsNotificationCenterRegistered())
 	{
 		unregisterFromNotificationCenter();
-	}
-
-	if (isFlagAsReferenceRegistered())
-	{
-		unregisterFromReferenceMap();
 	}
 
 	if (isFlagAsAutoUpdateRegistered())
@@ -92,7 +79,7 @@ CoreModifiable::~CoreModifiable()
 LazyContent* CoreModifiable::GetLazyContent() const
 {
 	if (mLazyContent) return mLazyContent;
-	std::lock_guard<std::recursive_mutex> lk{ GetMutex() };
+	std::lock_guard<std::shared_mutex> lk{ GetMutex() };
 	if (mLazyContent) return mLazyContent;
 	mLazyContent = new LazyContent;
 	return mLazyContent;
@@ -178,7 +165,7 @@ CoreModifiable*	CoreModifiable::getAggregateRoot() const
 					{
 						if ((*itc).isAggregate()) // if aggregate is same type as asked
 						{
-							if ((*itc).mItem == returnedVal)
+							if ((*itc).mItem.get() == returnedVal)
 							{
 								found = currentAggregate;
 								returnedVal = currentAggregate;
@@ -270,9 +257,9 @@ void CoreModifiable::Upgrade(UpgradorBase* toAdd)
 
 UpgradorBase* CoreModifiable::GetUpgrador(const KigsID& ID)
 {
-	if (mLazyContent)
+	if (auto lz = mLazyContent.load())
 	{ 
-		UpgradorBase* current= (UpgradorBase*)mLazyContent->GetLinkedListItem(LazyContentLinkedListItemStruct::ItemType::UpgradorType);
+		UpgradorBase* current= (UpgradorBase*)lz->GetLinkedListItem(LazyContentLinkedListItemStruct::ItemType::UpgradorType);
 		while (current)
 		{
 			if( (current->getID() == ID) || (ID == ""))
@@ -297,9 +284,9 @@ void CoreModifiable::debugPrintfTree(s32 indent, s32 maxindent)
 		kigsprintf("|\t");
 	
 #ifdef KEEP_NAME_AS_STRING
-	kigsprintf("%s : %s(%p) %d refs %s items:%d\n", getExactType().c_str(), getName().c_str(), this, (int)mRefCounter, IsInit() ? "" : "Not init!!", (s32)getItems().size());
+	kigsprintf("%s : %s(%p) %d refs %s items:%d\n", getExactType().c_str(), getName().c_str(), this, (int)shared_from_this().use_count(), IsInit() ? "" : "Not init!!", (s32)getItems().size());
 #else
-	kigsprintf("%d : %s(%p) %d refs %s items:%d\n", (u32)getExactType().toUInt(), getName().c_str(), this, (int)mRefCounter, IsInit()?"": "Not init!!", (s32)getItems().size());
+	kigsprintf("%d : %s(%p) %d refs %s items:%d\n", (u32)getExactType().toUInt(), getName().c_str(), this, (int)shared_from_this().use_count(), IsInit()?"": "Not init!!", (s32)getItems().size());
 #endif
 	
 	if(indent+1>maxindent)
@@ -446,9 +433,9 @@ const ModifiableMethodStruct* CoreModifiable::findMethodOnThisOnly(const KigsID&
 		}
 	}
 	// if not found, check on forward ptr
-	if (mLazyContent)
+	if (auto lz = mLazyContent.load())
 	{
-		StructLinkedListBase* found = mLazyContent->GetLinkedListItem(LazyContentLinkedListItemStruct::ItemType::ForwardSmartPtrType);
+		StructLinkedListBase* found = lz->GetLinkedListItem(LazyContentLinkedListItemStruct::ItemType::ForwardSmartPtrType);
 		while (found)
 		{
 			ForwardSP<CoreModifiable> f = *(static_cast<ForwardSP<CoreModifiable>*>(found));
@@ -533,12 +520,12 @@ bool CoreModifiable::aggregateWith(const CMSP& item, ItemPosition pos)
 
 bool CoreModifiable::removeAggregateWith(const CMSP& item)
 {
-	bool itemIsAlive = (item->getRefCount() > 1);
+	//bool itemIsAlive = (item->getRefCount() > 1);
 
 	if (removeItem(item PASS_LINK_NAME(linkName)))
 	{
 
-		if (itemIsAlive)
+		//if (itemIsAlive)
 		{
 			if (!item->checkIfAggregateSon()) // item is no more an aggregate son ?
 			{
@@ -592,13 +579,13 @@ CoreModifiableAttribute* CoreModifiable::findAttributeOnThisOnly(const KigsID& i
 		return (*i).second;
 	}
 	// if not found, check on forward ptr
-	if (mLazyContent)
+	if (auto lz = mLazyContent.load())
 	{
-		StructLinkedListBase* found = mLazyContent->GetLinkedListItem(LazyContentLinkedListItemStruct::ItemType::ForwardSmartPtrType);
+		StructLinkedListBase* found = lz->GetLinkedListItem(LazyContentLinkedListItemStruct::ItemType::ForwardSmartPtrType);
 		while (found)
 		{
 			ForwardSP<CoreModifiable>& f = *(static_cast<ForwardSP<CoreModifiable>*>(found));
-			if (!f.isNil())
+			if (f)
 			{
 				CoreModifiableAttribute* search = f->findAttributeOnThisOnly(id);
 				if (search)
@@ -710,14 +697,14 @@ bool CoreModifiable::CallMethod(KigsID methodNameID,std::vector<CoreModifiableAt
 			// set this upgrador at first pos
 			if (method.mUpgrador)
 			{
-				cachedUpgrador = localthis->mLazyContent->mLinkedListItem;
-				localthis->mLazyContent->mLinkedListItem = LazyContentLinkedListItemStruct::FromAddressAndType(method.mUpgrador,LazyContentLinkedListItemStruct::ItemType::UpgradorType);
+				cachedUpgrador = localthis->mLazyContent.load()->mLinkedListItem;
+				localthis->mLazyContent.load()->mLinkedListItem = LazyContentLinkedListItemStruct::FromAddressAndType(method.mUpgrador,LazyContentLinkedListItemStruct::ItemType::UpgradorType);
 			}
 			result = (localthis->*method.mMethod)(sender, params, privateParams);
 			// reset cached 
 			if (cachedUpgrador)
 			{
-				localthis->mLazyContent->mLinkedListItem = cachedUpgrador;
+				localthis->mLazyContent.load()->mLinkedListItem = cachedUpgrador;
 			}
 		}
 		
@@ -730,7 +717,7 @@ bool CoreModifiable::SimpleCallWithCoreItemParams(KigsID methodNameID, const Cor
 {
 	PackCoreModifiableAttributes	attr(this);
 
-	for (const auto& p : params)
+	for (const auto& p : *params)
 	{
 		if (p->GetType() & CoreItem::COREITEM_TYPE::COREVALUE)
 		{
@@ -741,13 +728,13 @@ bool CoreModifiable::SimpleCallWithCoreItemParams(KigsID methodNameID, const Cor
 			switch (p->size())
 			{
 			case 2:
-				attr << (Point2D)p;
+				attr << (Point2D)*p;
 				break;
 			case 3:
-				attr << (Point3D)p;
+				attr << (Point3D)*p;
 				break;
 			case 4:
-				attr << (Vector4D)p;
+				attr << (Vector4D)*p;
 				break;
 			default:
 				KIGS_WARNING("bad params for calls from xml", 2);
@@ -769,7 +756,7 @@ void CoreModifiable::ManageToCall(CoreModifiable::ImportState::ToCall& c)
 	std::string plist = "[" + c.paramList + "]";
 	CoreItemSP L_Dictionary = L_JsonParser.Get_JsonDictionaryFromString(plist);
 
-	if (!L_Dictionary.isNil())
+	if (L_Dictionary)
 	{
 		c.currentNode->SimpleCallWithCoreItemParams(c.methodName, L_Dictionary);
 	}
@@ -789,71 +776,53 @@ bool CoreModifiable::EmitSignal(const KigsID& signalID)
 
 bool CoreModifiable::EmitSignal(const KigsID& signalID, std::vector<CoreModifiableAttribute*>& params, void* privateParams)
 {
-	if (!isFlagAllowChanges()) return false;
-	std::unique_lock<std::recursive_mutex> lk{ GetMutex() };
-	if (!isFlagAllowChanges()) return false;
 	if (!mLazyContent) return false;
+	auto& mutex = GetMutex();
+	mutex.lock_shared();
 	auto& connected_to = GetLazyContent()->mConnectedTo;
 	auto it = connected_to.find(signalID);
 	if(it != connected_to.end())
 	{
-		std::vector<std::pair<KigsID, CoreModifiable*>> copy = it->second;
-		lk.unlock();
-		for(auto p : copy)
+		auto copy = it->second;
+		mutex.unlock_shared();
+
+		for(auto& p : copy)
 		{
-			if (!p.second->isFlagAllowChanges()) continue;
-			std::unique_lock<std::recursive_mutex> lk{ p.second->GetMutex() };
-			if (!p.second->isFlagAllowChanges()) continue;
-			p.second->CallMethod(p.first, params, privateParams);
+			if (auto ptr = p.second.lock())
+			{
+				ptr->CallMethod(p.first, params, privateParams);
+			}
 		}
 		return true;
 	}
 	return false;
 }
 
-void CoreModifiable::Connect(KigsID signal, CoreModifiable* other, KigsID slot CONNECT_PARAM)
+void CoreModifiable::Connect(KigsID signal, CMSP other, KigsID slot CONNECT_PARAM)
 {
-	if(!isFlagAllowChanges() || !other->isFlagAllowChanges())
-		return;
-
-	std::unique_lock<std::recursive_mutex> lock_this{ GetMutex(), std::defer_lock};
-	std::unique_lock<std::recursive_mutex> lock_other{other->GetMutex(), std::defer_lock};
-	std::lock(lock_this, lock_other);
-
-	if (!isFlagAllowChanges() || !other->isFlagAllowChanges())
-		return;
-	
 	auto& vec = GetLazyContent()->mConnectedTo[signal];
-	for(auto p : vec)
+	std::unique_lock<std::shared_mutex> lock_this{ GetMutex() };
+	for(auto& p : vec)
 	{
-		if(p.first == slot && p.second == other)
+		if(p.first == slot && p.second.lock() == other)
 		return;
 	}
 	vec.push_back({slot, other});
-	other->GetLazyContent()->mConnectedToMe[this].insert(std::make_pair(signal, slot));
 }
 
-void CoreModifiable::Disconnect(KigsID signal, CoreModifiable* other, KigsID slot)
+void CoreModifiable::Disconnect(KigsID signal, const CMSP& other, KigsID slot)
 {
-	if (!isFlagAllowChanges() || !other->isFlagAllowChanges()) return;
-	std::unique_lock<std::recursive_mutex> lock_this{ GetMutex(), std::defer_lock};
-	std::unique_lock<std::recursive_mutex> lock_other{other->GetMutex(), std::defer_lock};
-	std::lock(lock_this, lock_other);
-	if (!isFlagAllowChanges() || !other->isFlagAllowChanges()) return;
-
-	if (!mLazyContent || !other->mLazyContent) return;
-
+	if (!mLazyContent) return;
 	auto& vec = GetLazyContent()->mConnectedTo[signal];
+	std::unique_lock<std::shared_mutex> lock_this{ GetMutex() };
 	for(auto it = vec.begin(); it != vec.end(); ++it)
 	{
-		if(it->first == slot && it->second == other)
+		if(it->first == slot && it->second.lock() == other)
 		{
 			vec.erase(it);
-			other->GetLazyContent()->mConnectedToMe[this].erase(std::make_pair(signal, slot));
 			return;
 		}	
 	}
-
 }
 
 std::string	CoreModifiable::GetRuntimeID() const
@@ -1060,37 +1029,6 @@ void CoreModifiable::unregisterFromAutoUpdate()
 		currentApp->RemoveAutoUpdate(this);
 	}
 }
-
-void CoreModifiable::unregisterFromReferenceMap()
-{
-	// check if this coremodifiable is referenced
-	
-	auto& coremodigiablemap = KigsCore::Instance()->getReferenceMap();
-	auto found = coremodigiablemap.find(this);
-	
-	// ok, the CoreModifiable is here
-	if (found != coremodigiablemap.end())
-	{
-		std::vector<CoreModifiableAttribute*>& referencevector = (*found).second;
-		
-		std::vector<CoreModifiableAttribute*>::iterator	itcurrent = referencevector.begin();
-		std::vector<CoreModifiableAttribute*>::iterator	itend = referencevector.end();
-		
-		while (itcurrent != itend)
-		{
-			// clear each reference
-			
-			maReference* currentRef = (maReference*)(*itcurrent);
-			currentRef->ResetFoundModifiable();
-			
-			++itcurrent;
-		}
-		
-		coremodigiablemap.erase(found);
-	}
-	
-}
-
 
 void	CoreModifiable::DeleteDynamicAttributes()
 {
@@ -1512,9 +1450,13 @@ CoreModifiableAttribute*	CoreModifiable::GenericCreateDynamicAttribute(CoreModif
 			toadd = new maString(*this, false, ID);
 		}
 		break;
-		case CoreModifiable::ATTRIBUTE_TYPE::REFERENCE:
+		case CoreModifiable::ATTRIBUTE_TYPE::WEAK_REFERENCE:
 		{
 			toadd = new maReference(*this, false, ID);
+		}
+		case CoreModifiable::ATTRIBUTE_TYPE::STRONG_REFERENCE:
+		{
+			toadd = new maStrongReference(*this, false, ID);
 		}
 		break;
 		case CoreModifiable::ATTRIBUTE_TYPE::COREITEM:
@@ -1572,8 +1514,7 @@ void CoreModifiable::RemoveDynamicAttribute(KigsID id)
 //! add item at first or last position
 bool CoreModifiable::addItem(const CMSP& item, ItemPosition pos)
 {
-	std::unique_lock<std::recursive_mutex> lk{ GetMutex() };
-	if(!item.isNil())
+	if(item)
 	{
 
 		if (pos == First)
@@ -1600,14 +1541,12 @@ bool CoreModifiable::addItem(const CMSP& item, ItemPosition pos)
 //! add the given parent to list
 void CoreModifiable::addUser(CoreModifiable* user)
 {
-	std::unique_lock<std::recursive_mutex> lk{ GetMutex() };
 	mUsers.push_back(user);
 }
 
 //! remove user (parent)
 void CoreModifiable::removeUser(CoreModifiable* user)
 {
-	std::unique_lock<std::recursive_mutex> lk{ GetMutex() };
 	bool found=false;
 	do
 	{
@@ -1629,20 +1568,14 @@ void CoreModifiable::removeUser(CoreModifiable* user)
 	} while(found);
 }
 
-bool CoreModifiable::checkDestroy()
+void CoreModifiable::flagAsPostDestroy()
 {
-	if (isFlagAsPostDestroy())
-	{
-		unflagAsPostDestroy(); // remove flag
-		KigsCore::Instance()->AddToPostDestroyList(this);
-		return true;
-	}
-#ifdef KIGS_TOOLS
-	if (mTraceRef)
-		TRACEREF_DELETE
-#endif
-	ProtectedDestroy();
-	return GenericRefCountedBaseClass::checkDestroy();
+	KigsCore::Instance()->AddToPostDestroy(SharedFromThis());
+}
+
+void CoreModifiable::unflagAsPostDestroy()
+{
+	KigsCore::Instance()->RemoveFromPostDestroy(SharedFromThis());
 }
 
 //! Destroy method decrement refcounter and delete instance if no more used
@@ -1658,38 +1591,31 @@ void CoreModifiable::ProtectedDestroy()
 	if (mLazyContent)
 	{
 		// first downgrade if needed
-		UpgradorBase* found = (UpgradorBase * )mLazyContent->GetLinkedListItem(LazyContentLinkedListItemStruct::ItemType::UpgradorType);
+		UpgradorBase* found = (UpgradorBase * )mLazyContent.load()->GetLinkedListItem(LazyContentLinkedListItemStruct::ItemType::UpgradorType);
 		while(found)
 		{
 			// set this upgrador at first pos
-			LazyContentLinkedListItemStruct cachedUpgrador = mLazyContent->mLinkedListItem;
-			mLazyContent->mLinkedListItem = LazyContentLinkedListItemStruct::FromAddressAndType(found, LazyContentLinkedListItemStruct::ItemType::UpgradorType);
-			found->DowngradeInstance(this);
-			mLazyContent->mLinkedListItem = cachedUpgrador;
+			LazyContentLinkedListItemStruct cachedUpgrador = mLazyContent.load()->mLinkedListItem;
+			mLazyContent.load()->mLinkedListItem = LazyContentLinkedListItemStruct::FromAddressAndType(found, LazyContentLinkedListItemStruct::ItemType::UpgradorType);
+			found->Destroy(this, true);
+			mLazyContent.load()->mLinkedListItem = cachedUpgrador;
 
 			UpgradorBase* nextfound = (UpgradorBase * )found->getNext(LazyContentLinkedListItemStruct::ItemType::UpgradorType);
 			delete found;
 			found = nextfound;
 		}
-		mLazyContent->mLinkedListItem = 0;
+		mLazyContent.load()->mLinkedListItem = 0;
 	}
 
 	//! remove all items
 	EmptyItemList();
 	
-	std::lock_guard<std::recursive_mutex> lock_this{ GetMutex() };
-	unflagAllowChanges();
-
 	// delete dynamic attributes
 	DeleteDynamicAttributes();
 	if (mLazyContent)
 	{
-		for (auto ref : GetLazyContent()->mWeakRefs)
-		{
-			ref->ItemIsBeingDeleted();
-		}
-
 		// Notify connected items
+		/*
 		for (auto& signal : GetLazyContent()->mConnectedTo)
 		{
 			for (auto& p : signal.second)
@@ -1716,8 +1642,7 @@ void CoreModifiable::ProtectedDestroy()
 				}
 			}
 		}
-
-		
+		*/
 	}
 }
 
@@ -1751,18 +1676,18 @@ void CoreModifiable::CallUpdate(const Timer& timer, void* addParam)
 	EmitSignal(Signals::Update, this, (CoreModifiable*)&timer);
 	Update(timer, addParam);
 	// Upgrador updage
-	if (mLazyContent)
+	if (auto lz = mLazyContent.load())
 	{
-		UpgradorBase* found = (UpgradorBase * )mLazyContent->GetLinkedListItem(LazyContentLinkedListItemStruct::ItemType::UpgradorType);
+		UpgradorBase* found = (UpgradorBase * )lz->GetLinkedListItem(LazyContentLinkedListItemStruct::ItemType::UpgradorType);
 		while (found)
 		{
 			// set current at first place in the list so cache first one
-			LazyContentLinkedListItemStruct cachedUpgrador = mLazyContent->mLinkedListItem;
+			LazyContentLinkedListItemStruct cachedUpgrador = lz->mLinkedListItem;
 			// set this upgrador at first pos
-			mLazyContent->mLinkedListItem = LazyContentLinkedListItemStruct::FromAddressAndType(found, LazyContentLinkedListItemStruct::ItemType::UpgradorType);
+			lz->mLinkedListItem = LazyContentLinkedListItemStruct::FromAddressAndType(found, LazyContentLinkedListItemStruct::ItemType::UpgradorType);
 			found->UpgradorUpdate(this,timer,addParam);
 			// reset cached
-			mLazyContent->mLinkedListItem = cachedUpgrador;
+			lz->mLinkedListItem = cachedUpgrador;
 
 			found = (UpgradorBase * )found->getNext(LazyContentLinkedListItemStruct::ItemType::UpgradorType);
 
@@ -1773,10 +1698,6 @@ void CoreModifiable::CallUpdate(const Timer& timer, void* addParam)
 //! remove item (son)
 bool CoreModifiable::removeItem(const CMSP& item)
 {
-	std::unique_lock<std::recursive_mutex> lk{ GetMutex() };
-
-	auto item_ptr = item.get();
-
 	bool found=false, res=false;
 	do
 	{
@@ -1785,7 +1706,7 @@ bool CoreModifiable::removeItem(const CMSP& item)
 		std::vector<ModifiableItemStruct>::iterator end=mItems.end();
 		for(; it!=end ; ++it)
 		{
-			if(item_ptr == (*it).mItem.get())
+			if(item == (*it).mItem)
 			{
 				found = true;
 				break;
@@ -1795,8 +1716,8 @@ bool CoreModifiable::removeItem(const CMSP& item)
 		if(found)
 		{
 			res=true;
-			item_ptr->removeUser(this);
-			EmitSignal(Signals::RemoveItem, this, item_ptr);
+			item->removeUser(this);
+			EmitSignal(Signals::RemoveItem, this, item.get());
 			mItems.erase(it);
 		}
 	} while(found);
@@ -1818,11 +1739,12 @@ void CoreModifiable::Upgrade(const std::string& toAdd)
 
 void CoreModifiable::Downgrade(const std::string& toRemove)
 {
-	if (!mLazyContent)
+	auto lz = mLazyContent.load();
+	if (!lz)
 		return;
 
 	UpgradorBase* previous = nullptr;
-	UpgradorBase* found = (UpgradorBase * )mLazyContent->GetLinkedListItem(LazyContentLinkedListItemStruct::ItemType::UpgradorType);
+	UpgradorBase* found = (UpgradorBase * )lz->GetLinkedListItem(LazyContentLinkedListItemStruct::ItemType::UpgradorType);
 
 	while (found)
 	{
@@ -1834,7 +1756,7 @@ void CoreModifiable::Downgrade(const std::string& toRemove)
 			}
 			else
 			{
-				mLazyContent->mLinkedListItem = found->mNextItem;
+				lz->mLinkedListItem = found->mNextItem;
 			}
 			found->DowngradeInstance(this);
 			break;
@@ -2352,7 +2274,7 @@ void	CoreModifiable::Export(std::vector<CoreModifiable*>& savedList, XMLNode * c
 						auto filepath = settings->working_directory + path;
 						if (compressManager)
 						{
-							auto result = OwningRawPtrToSmartPtr(new CoreRawBuffer);
+							auto result = MakeRefCounted<CoreRawBuffer>();
 							compressManager->SimpleCall("CompressData", buffer, result.get());
 							ModuleFileManager::SaveFile(filepath.c_str(), (u8*)result->data(), result->size());
 						}
@@ -2386,7 +2308,7 @@ void	CoreModifiable::Export(std::vector<CoreModifiable*>& savedList, XMLNode * c
 			}
 			
 			// export modifier
-			AttachedModifierBase* exportedModifier=current->getFirstAttachedModifier();
+			AttachedModifierBase* exportedModifier = current->getFirstAttachedModifier();
 			while (exportedModifier)
 			{
 				XMLNode*	modifierNode = new XMLNode();
@@ -2484,7 +2406,7 @@ void	CoreModifiable::Export(std::vector<CoreModifiable*>& savedList, XMLNode * c
 		std::vector<ModifiableItemStruct>::iterator e = mItems.end();
 		for (; i != e; ++i)
 		{
-			CoreModifiable* current = (*i).mItem.Pointer();
+			CoreModifiable* current = (*i).mItem.get();
 			
 			if (current->getAttribute("NoExport")) continue;
 
@@ -2606,7 +2528,7 @@ bool	CoreModifiable::ImportAttributes(const std::string &filename)
 
 void	CoreModifiable::InitLuaScript(XMLNodeBase* currentNode, CoreModifiable* currentModifiable, ImportState& importState)
 {
-	CoreModifiable* luamodule = KigsCore::GetModule("LuaKigsBindModule");
+	auto luamodule = KigsCore::GetModule("LuaKigsBindModule");
 	if (!luamodule)
 		return;
 
@@ -2627,11 +2549,10 @@ void	CoreModifiable::InitLuaScript(XMLNodeBase* currentNode, CoreModifiable* cur
 			code.erase(code.begin());
 
 			u64 size;
-			CoreRawBuffer* rawbuffer = ModuleFileManager::LoadFileAsCharString(code.c_str(), size, 1);
+			auto rawbuffer = ModuleFileManager::LoadFileAsCharString(code.c_str(), size, 1);
 			if (rawbuffer)
 			{
 				code = rawbuffer->buffer();
-				rawbuffer->Destroy();
 			}
 			else
 			{
@@ -2681,7 +2602,8 @@ AttachedModifierBase* CoreModifiable::InitAttributeModifier(XMLNodeBase* current
 {
 	XMLAttributeBase* attrtype = currentNode->getAttribute("T", "Type");
 
-	AttachedModifierBase* toAdd = 0;
+	std::unique_ptr<AttachedModifierBase> toAdd;
+	AttachedModifierBase* return_value = nullptr;
 	if (attrtype)
 	{
 		std::string modifiertype = attrtype->getString();
@@ -2691,11 +2613,11 @@ AttachedModifierBase* CoreModifiable::InitAttributeModifier(XMLNodeBase* current
 			auto itfound = instanceMap.find(modifiertype);
 			if (itfound != instanceMap.end())
 			{
-				toAdd = (AttachedModifierBase*)(*itfound).second();
+				toAdd = static_unique_pointer_cast<AttachedModifierBase>((*itfound).second());
 			}
 		}
 
-		if (toAdd != 0)
+		if (toAdd)
 		{
 			// is setter ?
 			bool isSetter = false;
@@ -2733,11 +2655,11 @@ AttachedModifierBase* CoreModifiable::InitAttributeModifier(XMLNodeBase* current
 			}
 
 			toAdd->Init(attr, !isSetter, value);
-			attr->attachModifier(toAdd);
+			return_value = toAdd.get();
+			attr->attachModifier(std::move(toAdd));
 		}
 	}
-
-	return toAdd;
+	return return_value;
 }
 
 
@@ -2865,13 +2787,12 @@ std::vector<CMSP> CoreModifiable::getRootParentsWithPath(std::string &remainingp
 
 void CoreModifiable::recursiveGetRootParentsWithPath(const std::string& searchType, const std::string& searchName, std::vector<CMSP>& parents)
 {
-	std::unique_lock<std::recursive_mutex> lk{ GetMutex() }; // Don't want to be modified by another thread here
 	// check this
 	if (getName() == searchName)
 	{
 		if (isSubType(searchType))
 		{
-			parents.push_back(CMSP(this, GetRefTag{}));
+			parents.push_back(SharedFromThis());
 		}
 	}
 
@@ -2904,13 +2825,12 @@ CMSP CoreModifiable::SearchInstance(const std::string& infos, CoreModifiable* se
 //! return the instance corresponding to the given path in sons tree
 CMSP CoreModifiable::GetInstanceByPath(const std::string &path)
 {
-	std::unique_lock<std::recursive_mutex> lk{ GetMutex() }; // don't want to be changed in another thread during search
 	std::string RemainingPath;
 	std::string sonName=GetFirstNameInPath(path,RemainingPath);
 
 	if (sonName == "")
 	{
-		return CMSP(this, GetRefTag{});
+		return SharedFromThis();
 	}
 
 
@@ -3011,7 +2931,6 @@ CMSP CoreModifiable::GetInstanceByPath(const std::string &path)
 
 void CoreModifiable::GetSonInstancesByName(KigsID cid, const std::string &name, std::vector<CMSP>& instances,bool recursive)
 {
-	std::unique_lock<std::recursive_mutex> lk{ GetMutex() }; // don't want to be changed in another thread
 	std::vector<ModifiableItemStruct>::iterator itsons;
 	for(itsons=mItems.begin();itsons!=mItems.end();itsons++)
 	{
@@ -3031,7 +2950,6 @@ void CoreModifiable::GetSonInstancesByName(KigsID cid, const std::string &name, 
 
 CMSP CoreModifiable::GetFirstSonByName(KigsID cid, const std::string &name, bool recursive)
 {
-	std::unique_lock<std::recursive_mutex> lk{ GetMutex() }; // don't want to be changed in another thread
 	for (auto& son : getItems())
 	{
 		if (son.mItem->isSubType(cid) && name == son.mItem->getName())
@@ -3050,7 +2968,6 @@ CMSP CoreModifiable::GetFirstSonByName(KigsID cid, const std::string &name, bool
 
 void CoreModifiable::GetSonInstancesByType(KigsID cid, std::vector<CMSP>& instances,bool recursive)
 {
-	std::unique_lock<std::recursive_mutex> lk{ GetMutex() }; // don't want to be changed in another thread
 	std::vector<ModifiableItemStruct>::iterator itsons;
 	for(itsons=mItems.begin();itsons!=mItems.end();itsons++)
 	{
@@ -3068,7 +2985,6 @@ void CoreModifiable::GetSonInstancesByType(KigsID cid, std::vector<CMSP>& instan
 
 CMSP CoreModifiable::GetFirstSonByType(KigsID cid, bool recursive)
 {
-	std::unique_lock<std::recursive_mutex> lk{ GetMutex() }; // don't want to be changed in another thread
 	for (auto& son : getItems())
 	{
 		if (son.mItem->isSubType(cid))
@@ -3139,7 +3055,7 @@ void	CoreModifiable::EvalAttribute(std::string& attr,CoreModifiable* owner, Core
 			{
 				ItemToEval = CoreItemOperator<Point2D>::Construct(toeval, owner, KigsCore::Instance()->GetDefaultCoreItemOperatorConstructMap());
 
-				Point2D result((Point2D)ItemToEval);
+				Point2D result((Point2D)*ItemToEval);
 				char resultBuffer[128];
 				sprintf(resultBuffer, "{%f,%f}", result.x,result.y);
 				attr = resultBuffer;
@@ -3147,7 +3063,7 @@ void	CoreModifiable::EvalAttribute(std::string& attr,CoreModifiable* owner, Core
 			else if (arraySize == 3)
 			{
 				ItemToEval = CoreItemOperator<Point3D>::Construct(toeval, owner, KigsCore::Instance()->GetDefaultCoreItemOperatorConstructMap());
-				Point3D result((Point3D)ItemToEval);
+				Point3D result((Point3D)*ItemToEval);
 				char resultBuffer[128];
 				sprintf(resultBuffer, "{%f,%f,%f}", result.x, result.y,result.z);
 				attr = resultBuffer;
@@ -3166,7 +3082,7 @@ void	CoreModifiable::EvalAttribute(std::string& attr,CoreModifiable* owner, Core
 		{
 			ItemToEval = CoreItemOperator<kfloat>::Construct(toeval, owner, KigsCore::Instance()->GetDefaultCoreItemOperatorConstructMap());
 
-			kfloat result((kfloat)ItemToEval);
+			kfloat result((kfloat)*ItemToEval);
 
 			char resultBuffer[128];
 
@@ -3241,20 +3157,7 @@ CoreModifiable* CoreModifiable::recursiveGetRootParentByType(const KigsID& Paren
 	return 0;
 }
 
-void CoreModifiable::AddWeakRef(WeakRef* ref)
-{
-	GetLazyContent()->mWeakRefs.push_back(ref);
-}
-
-void CoreModifiable::RemoveWeakRef(WeakRef* ref)
-{
-	auto lz = GetLazyContent();
-	auto itfind = std::find(lz->mWeakRefs.begin(), lz->mWeakRefs.end(), ref);
-	if (*itfind != lz->mWeakRefs.back())
-		*itfind = lz->mWeakRefs.back();
-	lz->mWeakRefs.pop_back();
-}
-
+/*
 #ifdef KIGS_TOOLS
 void CoreModifiable::GetRef()
 {
@@ -3282,7 +3185,7 @@ void CoreModifiable::Destroy()
 	GenericRefCountedBaseClass::Destroy();
 }
 #endif
-
+*/
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 //! some utility MACROS for string to value and value to string conversion
@@ -3405,60 +3308,6 @@ PackCoreModifiableAttributes::~PackCoreModifiableAttributes()
 		delete attr;
 }
 
-
-
-WeakRef& WeakRef::operator=(const WeakRef& copy_that)
-{
-	if (&copy_that == this) return *this;
-	to = copy_that.to;
-	alive = copy_that.alive;
-	if (IsValid()) to->AddWeakRef(this);
-	return *this;
-}
-
-WeakRef& WeakRef::operator=(WeakRef&& move_that)
-{
-	if (&move_that == this) return *this;
-	
-	to = move_that.to;
-	alive = move_that.alive;
-
-	if (IsValid())
-	{
-		to->AddWeakRef(this);
-		to->RemoveWeakRef(&move_that);
-	}
-	move_that.to = nullptr;
-	move_that.alive = false;
-	return *this;
-}
-
-WeakRef& WeakRef::operator=(CoreModifiable* item)
-{
-	if (item == to) return *this;
-
-	to = item;
-	alive = true;
-	if (IsValid()) to->AddWeakRef(this);
-	return *this;
-}
-
-WeakRef::~WeakRef()
-{
-	if (IsValid()) to->RemoveWeakRef(this);
-}
-
-void WeakRef::ItemIsBeingDeleted()
-{
-	alive = false;
-}
-
-SmartPointer<CoreModifiable> WeakRef::Lock() const
-{
-	if (!IsValid()) return {};
-	if (to) to->GetRef();
-	return OwningRawPtrToSmartPtr(to);
-}
 
 LazyContent::~LazyContent()
 {

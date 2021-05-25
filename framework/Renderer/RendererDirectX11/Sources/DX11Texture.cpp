@@ -72,6 +72,19 @@ DX11Texture::DX11Texture(const std::string& name, CLASS_NAME_TREE_ARG)
 
 DX11Texture::~DX11Texture()
 {
+	CoreModifiableAttribute* delayed = getAttribute("DelayedInit");
+	if (delayed) // delay init
+	{
+		void* datastruct;
+		if (delayed->getValue(datastruct))
+		{
+			TextureDelayedInitData* delayedStruct = (TextureDelayedInitData*)datastruct;
+			delete delayedStruct;
+			RemoveDynamicAttribute("DelayedInit");
+		}
+
+	}
+
 	// release d3d object
 	if (mTexturePointer)
 		mTexturePointer->Release();
@@ -93,24 +106,6 @@ void DX11Texture::InitModifiable()
 	mCanReuseBuffer = false;
 
 	Texture::InitModifiable();
-}
-
-void DX11Texture::ProtectedDestroy()
-{
-	CoreModifiableAttribute* delayed = getAttribute("DelayedInit");
-
-	if (delayed) // delay init
-	{
-		void* datastruct;
-		if (delayed->getValue(datastruct))
-		{
-			TextureDelayedInitData* delayedStruct = (TextureDelayedInitData*)datastruct;
-			delete delayedStruct;
-			RemoveDynamicAttribute("DelayedInit");
-		}
-
-	}
-	Texture::ProtectedDestroy();
 }
 
 void DX11Texture::UninitModifiable()
@@ -221,7 +216,7 @@ bool DX11Texture::ManagePow2Buffer(u32 aWidth, u32 aHeight, u32 aPixSize)
 
 bool DX11Texture::CreateFromImage(const SmartPointer<TinyImage>& image, bool directInit)
 {
-	if (image.isNil())
+	if (!image)
 		return false;
 
 	unsigned char* data;
@@ -553,11 +548,6 @@ bool DX11Texture::CreateFromImage(const SmartPointer<TinyImage>& image, bool dir
 	return true;
 	}
 
-
-
-
-	
-
 bool DX11Texture::CreateFromText(const unsigned short* text, unsigned int fontSize, const char* fontName, unsigned int a_Alignment, float R, float G, float B, float A, TinyImage::ImageFormat format, int a_drawingLimit) 
 {
 	return CreateFromText(text, 0, 0, fontSize, fontName, a_Alignment, R, G, B, A, format, a_drawingLimit);
@@ -595,12 +585,11 @@ bool DX11Texture::CreateFromText(const unsigned short* text, unsigned int _maxLi
 				return false;
 
 			u64 size;
-			CoreRawBuffer* L_Buffer = ModuleFileManager::LoadFile(fullfilenamehandle.get(), size);
+			auto L_Buffer = ModuleFileManager::LoadFile(fullfilenamehandle.get(), size);
 			if (L_Buffer)
 			{
 				unsigned char* pBuffer = (unsigned char*)L_Buffer->CopyBuffer();
 				ModuleSpecificRenderer::mDrawer->SetFont(fontName, pBuffer, size, fontSize);
-				L_Buffer->Destroy();
 			}
 			else
 				break;
@@ -617,7 +606,7 @@ bool DX11Texture::CreateFromText(const unsigned short* text, unsigned int _maxLi
 		if (!pImageData)
 			break;
 
-		SmartPointer<TinyImage>	img = OwningRawPtrToSmartPtr(TinyImage::CreateImage(pImageData, L_Width, L_Height, TinyImage::RGBA_32_8888));
+		SmartPointer<TinyImage>	img = TinyImage::CreateImage(pImageData, L_Width, L_Height, TinyImage::RGBA_32_8888);
 
 		if (!CreateFromImage(img))
 			break;
@@ -658,8 +647,8 @@ bool DX11Texture::Load()
 			if (!lFile)
 				return false;
 
-			SmartPointer<TinyImage> toload = OwningRawPtrToSmartPtr(TinyImage::CreateImage(lFile.get()));
-			if (!toload.isNil())
+			SmartPointer<TinyImage> toload = TinyImage::CreateImage(lFile.get());
+			if (toload)
 			{
 				bool result = false;
 				if (toload->IsOK())

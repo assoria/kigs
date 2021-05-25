@@ -4,9 +4,16 @@
 
 #include <atomic>
 #include <vector>
+#include <memory>
 
 class CoreModifiable;
 class CoreModifiableAttribute;
+
+template<typename To, typename From>
+inline std::unique_ptr<To> static_unique_pointer_cast(std::unique_ptr<From>&& old)
+{
+	return std::unique_ptr<To>{static_cast<To*>(old.release())};
+}
 
 // ****************************************
 // * GenericRefCountedBaseClass class
@@ -19,36 +26,37 @@ class CoreModifiableAttribute;
 */
 // ****************************************
 
-#ifdef KIGS_TOOLS
-#define TRACEREF_VIRTUAL virtual
-#else
-#define TRACEREF_VIRTUAL 
+#ifdef _DEBUG
+#define GenericRefCountedBaseClassLeakCheck
 #endif
 
+#ifdef GenericRefCountedBaseClassLeakCheck
+#include <unordered_set>
+#include <shared_mutex>
+class GenericRefCountedBaseClass;
+inline std::shared_mutex AllObjectsMutex;
+inline std::unordered_set<GenericRefCountedBaseClass*> AllObjects;
+#endif
 
-
-class GenericRefCountedBaseClass
+class GenericRefCountedBaseClass : public std::enable_shared_from_this<GenericRefCountedBaseClass>
 {
 public:
-
 	typedef bool (GenericRefCountedBaseClass::* ModifiableMethod)(CoreModifiable* sender, std::vector<CoreModifiableAttribute*>&, void* privateParams);
-	GenericRefCountedBaseClass() {}
-	
-	TRACEREF_VIRTUAL void GetRef();
-	TRACEREF_VIRTUAL bool TryGetRef();
-	TRACEREF_VIRTUAL void Destroy();
-
-	inline int getRefCount() { return mRefCounter; }
-
-protected:
-	std::atomic_int	mRefCounter{1};
-
-	// if true is returned then don't do final delete
-	virtual bool checkDestroy()
+	GenericRefCountedBaseClass() 
 	{
-		return false;
+#ifdef GenericRefCountedBaseClassLeakCheck
+		std::lock_guard<std::shared_mutex> lk{ AllObjectsMutex };
+		AllObjects.insert(this);
+#endif
 	}
-	virtual ~GenericRefCountedBaseClass() {};
+
+	virtual ~GenericRefCountedBaseClass() 
+	{
+#ifdef GenericRefCountedBaseClassLeakCheck
+		std::lock_guard<std::shared_mutex> lk{ AllObjectsMutex };
+		AllObjects.erase(this);
+#endif
+	};
 };
 
 #endif //_GENERICREFCOUNTEDBASECLASS_H_

@@ -52,7 +52,16 @@ DEFINE_MAKE_ATTR_FUNC(const char*, maString)
 DEFINE_MAKE_ATTR_FUNC(const usString&, maUSString)
 DEFINE_MAKE_ATTR_FUNC(usString&&, maUSString)
 
-DEFINE_MAKE_ATTR_FUNC(CoreModifiable*, maReference);
+DEFINE_MAKE_ATTR_FUNC(CoreModifiable*, maRawPtr);
+
+template<typename T>
+inline CoreModifiableAttribute* MakeAttributeSpec(SP<T> value, CoreModifiable* owner, const kstl::string& name = "maStrongReference")
+{
+	if (owner)
+		return new maStrongReference(*owner, false, name, maStrongReferenceObject{ value });
+	else
+		return new maStrongReference(name, maStrongReferenceObject{ value });
+}
 
 template<typename T, REQUIRES(!std::is_fundamental<std::decay_t<T>>::value)>
 CoreModifiableAttribute* MakeAttributeSpec(T&& value, CoreModifiable* owner, const kstl::string& name = "maRawPtrStruct")
@@ -168,8 +177,7 @@ CoreModifiableAttribute* MakeAttribute(T&& value, CoreModifiable* owner, const k
 template<typename T>
 CoreModifiableAttribute* MakeAttribute(const SmartPointer<T>& value, CoreModifiable* owner, const kstl::string& name = "ParamSP")
 {
-	CoreModifiable* ptr = static_cast<CoreModifiable*>(value.get());
-	return MakeAttributeSpec(ptr, owner, name);
+	return MakeAttributeSpec(value, owner, name);
 }
 
 // r-value reference of a fundamental type. use equivalent CoreModifiableAttribute type
@@ -271,7 +279,7 @@ namespace kigs_impl
 	{
 		void* ptr;
 		if (attr->getValue(ptr))
-			value = NonOwningRawPtrToSmartPtr((T*)ptr);
+			value = ((T*)ptr)->SharedFromThis();
 	}
 	
 	template<typename T>
@@ -541,18 +549,16 @@ bool CoreModifiable::SimpleCall(KigsID methodNameID, T&&... params)
 template<typename... T>
 inline bool CoreModifiable::EmitSignal(const KigsID& SignalID, T&&... params)
 {
-	if (!isFlagAllowChanges()) return false;
-	std::unique_lock<std::recursive_mutex> lk{ GetMutex() };
-	if (!isFlagAllowChanges()) return false;
-
 	if (!mLazyContent) return false;
-
-	auto it = GetLazyContent()->mConnectedTo.find(SignalID);
-	if(it != GetLazyContent()->mConnectedTo.end())
+	auto& mutex = GetMutex();
+	mutex.lock_shared();
+	auto& connected_to = GetLazyContent()->mConnectedTo;
+	auto it = connected_to.find(SignalID);
+	if (it != connected_to.end())
 	{
-		std::vector<std::pair<KigsID, CoreModifiable*>> copy = it->second;
-		lk.unlock();
-		
+		auto copy = it->second;
+		mutex.unlock_shared();
+
 		PackCoreModifiableAttributes	attr(nullptr);
 		int expander[]
 		{
@@ -561,16 +567,16 @@ inline bool CoreModifiable::EmitSignal(const KigsID& SignalID, T&&... params)
 		(void)expander;
 		auto& attr_list = (kstl::vector<CoreModifiableAttribute*>&)attr;
 
-		for(auto p : copy)
+		for (auto& p : copy)
 		{
-			if (!p.second->isFlagAllowChanges()) continue;
-			std::unique_lock<std::recursive_mutex> lk{ p.second->GetMutex() };
-			if (!p.second->isFlagAllowChanges()) continue;
-			p.second->CallMethod(p.first, attr_list, nullptr, this);
+			if (auto ptr = p.second.lock())
+			{
+				ptr->CallMethod(p.first, attr_list, nullptr, this);
+			}
 		}
 		return true;
 	}
-	
+	mutex.unlock_shared();
 	return false;
 }
 

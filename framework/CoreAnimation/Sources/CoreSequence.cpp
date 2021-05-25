@@ -5,7 +5,7 @@
 #include "ModuleCoreAnimation.h"
 
 
-CoreSequence::CoreSequence(CoreModifiable* target, KigsID nameID, Timer* reftimer) :
+CoreSequence::CoreSequence(CMSP target, KigsID nameID, Timer* reftimer) :
 	mTarget(target)
 	, mID(nameID)
 	, mStartTime(-1.0)
@@ -14,7 +14,7 @@ CoreSequence::CoreSequence(CoreModifiable* target, KigsID nameID, Timer* reftime
 	, mCurrentActionIndex(0)
 {
 	ModuleCoreAnimation* coreanim = (ModuleCoreAnimation*)KigsCore::Instance()->GetMainModuleInList(CoreAnimationModuleCoreIndex);
-	KigsCore::Connect(target, "Destroy", coreanim, "OnDestroyCallBack");
+	KigsCore::Connect(target.get(), "Destroy", coreanim, "OnDestroyCallBack");
 }
 
 // return true if finished
@@ -48,7 +48,9 @@ bool	CoreSequence::update(const Timer& timer)
 
 	if (mCurrentActionIndex == 0xFFFFFFFF)
 	{
-		mTarget->EmitSignal("SequenceFinished", mTarget, this);
+		auto ptr = mTarget.lock();
+		if(ptr)
+			ptr->EmitSignal("SequenceFinished", ptr.get(), this);
 		return true;
 	}
 	return false;
@@ -77,11 +79,12 @@ void	CoreSequence::stop()
 
 CoreSequence::~CoreSequence()
 {
-	ModuleCoreAnimation* coreanim = (ModuleCoreAnimation*)KigsCore::Instance()->GetMainModuleInList(CoreAnimationModuleCoreIndex);
+	auto coreanim = KigsCore::GetModule<ModuleCoreAnimation>();
+	if (!coreanim) return;
 
-	if (mTarget)
+	if (auto ptr = mTarget.lock())
 	{
-		KigsCore::Disconnect(mTarget, "Destroy", coreanim, "OnDestroyCallBack");
+		KigsCore::Disconnect(ptr.get(), "Destroy", coreanim.get(), "OnDestroyCallBack");
 	}
 }
 

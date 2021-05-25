@@ -21,16 +21,20 @@ IMPLEMENT_CONSTRUCTOR(UITexturedItem)
 	bool is_bgr = false;
 	mTexturePointer->getValue("IsBGR", is_bgr);
 	ChangeNodeFlag(Node2D_hasBGRTexture, is_bgr);
+}
 
-	KigsCore::Connect(mTexturePointer.get(), "NotifyUpdate", this , "TextureNotifyUpdate");
+void UITexturedItem::InitModifiable()
+{
+	ParentClassType::InitModifiable();
+	KigsCore::Connect(mTexturePointer.get(), "NotifyUpdate", this, "TextureNotifyUpdate");
 }
 
 void UITexturedItem::SetTexUV(UIVerticesInfo * aQI)
 {
 	
-	if (!mTexturePointer.isNil())
+	if (mTexturePointer)
 	{
-		if (mTexturePointer->getTexture().isNil())
+		if (!mTexturePointer->getTexture())
 		{
 			return;
 		}
@@ -112,8 +116,6 @@ void UITexturedItem::SetTexUV(UIVerticesInfo * aQI)
 
 UITexturedItem::~UITexturedItem()
 {
-	if(!mTexturePointer.isNil())
-		KigsCore::Disconnect(mTexturePointer.get(), "NotifyUpdate", this, "TextureNotifyUpdate");
 	mTexturePointer = NULL;
 }
 
@@ -141,7 +143,7 @@ bool UITexturedItem::addItem(const CMSP& item, ItemPosition pos DECLARE_LINK_NAM
 {
 	if (item->isSubType(Texture::mClassID))
 	{
-		mTexturePointer->setTexture((SP<Texture>&)item);
+		mTexturePointer->setTexture(item);
 		mTexturePointer->refreshTextureInfos();
 
 		SetNodeFlag(Node2D_SizeChanged);
@@ -166,7 +168,7 @@ bool UITexturedItem::removeItem(const CMSP& item DECLARE_LINK_NAME)
 	return UIDrawableItem::removeItem(item PASS_LINK_NAME(linkName));
 }
 
-void	UITexturedItem::TextureNotifyUpdate(const unsigned int  labelid)
+void UITexturedItem::TextureNotifyUpdate(const unsigned int  labelid)
 {
 	if (labelid == KigsID("TextureName"))
 	{

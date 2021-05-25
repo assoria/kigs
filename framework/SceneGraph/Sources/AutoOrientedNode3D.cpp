@@ -11,7 +11,7 @@ void	AutoOrientedNode3DUp::Init(CoreModifiable* toUpgrade)
 	// Connect notify update
 	KigsCore::Connect(toUpgrade, "NotifyUpdate", toUpgrade, "AutoOrientedNotifyUpdate");
 
-	mTarget = toUpgrade->AddDynamicAttribute(CoreModifiable::ATTRIBUTE_TYPE::REFERENCE, "Target", "");
+	mTarget = toUpgrade->AddDynamicAttribute(CoreModifiable::ATTRIBUTE_TYPE::WEAK_REFERENCE, "Target", "");
 	mTarget->changeNotificationLevel(Owner);
 	mCurrentTarget = nullptr;
 	v3f axis(0.0f, 0.0f, 1.0f);
@@ -28,8 +28,10 @@ void	AutoOrientedNode3DUp::Init(CoreModifiable* toUpgrade)
 }
 
 //  remove dynamic attributes and disconnect events
-void	AutoOrientedNode3DUp::Destroy(CoreModifiable* toDowngrade)
+void	AutoOrientedNode3DUp::Destroy(CoreModifiable* toDowngrade, bool toDowngradeDeleted)
 {
+	if (toDowngradeDeleted) return;
+
 	KigsCore::Disconnect(toDowngrade, "NotifyUpdate", toDowngrade, "CoordinateSystemNotifyUpdate");
 	toDowngrade->RemoveDynamicAttribute("Target");
 	toDowngrade->RemoveDynamicAttribute("OrientedAxis");
@@ -49,7 +51,7 @@ DEFINE_UPGRADOR_METHOD(AutoOrientedNode3DUp, AutoOrientedNotifyUpdate)
 
 		if (GetUpgrador()->mTarget->getLabelID() == labelID)
 		{
-			GetUpgrador()->mCurrentTarget =(Node3D*) (CoreModifiable*)(*(maReference*)(GetUpgrador()->mTarget));
+			GetUpgrador()->mCurrentTarget = (Node3D*)(CoreModifiable*)(*(maReference*)(GetUpgrador()->mTarget));
 		}
 
 	}

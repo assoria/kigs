@@ -56,7 +56,6 @@ void LuaBehaviour::InitLua(kdouble current_time)
 
 LuaBehaviour::~LuaBehaviour()
 {
-
 	if (mL && mSelf)
 	{
 		mSelf.pushToStack();
@@ -68,12 +67,6 @@ LuaBehaviour::~LuaBehaviour()
 		}
 		mL.pop(1);
 		mSelf = nullptr;
-	}
-	
-	if (mTarget)
-	{
-		KigsCore::Disconnect(mTarget, "AddItem", this, "OnAddItemCallback");
-		KigsCore::Disconnect(mTarget, "RemoveItem", this, "OnRemoveItemCallback");
 	}
 }    
 
@@ -116,7 +109,7 @@ void	LuaBehaviour::InitModifiable()
 	if (GetParentCount() == 0) return;
 	CoreModifiable::InitModifiable();
 	
-	mLuaModule = (LuaKigsBindModule*)KigsCore::GetModule("LuaKigsBindModule");
+	mLuaModule = (LuaKigsBindModule*)KigsCore::GetModule("LuaKigsBindModule").get();
 	
 	mL = mLuaModule->getLuaState();
 	
