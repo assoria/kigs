@@ -31,6 +31,11 @@ class CoreItemSP : public std::shared_ptr<CoreItem>
 public:
 	using std::shared_ptr<CoreItem>::shared_ptr;
 
+	CoreItemSP(std::shared_ptr<CoreItem> p) : std::shared_ptr<CoreItem>(p)
+	{
+
+	}
+
 	// Auto cast
 	template<typename U>
 	operator SmartPointer<U>()
@@ -258,7 +263,9 @@ public:
 			// NOTE(antoine) : Possible reasons :
 			// It's forbidden to call shared_from_this inside the constructor
 			// If the object was new'ed manually and not yet assigned to a shared_ptr, consider using the Make* functions below instead, or std::make_shared/MakeRefCounted
+			#ifdef WIN32			
 			__debugbreak();
+			#endif		
 		}
 		return nullptr;
 #else

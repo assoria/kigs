@@ -333,7 +333,9 @@ void KigsCore::Close(bool closeMemoryManager)
 #ifdef GenericRefCountedBaseClassLeakCheck
 		if (AllObjects.size())
 		{
-			__debugbreak();
+#ifdef WIN32			
+			__debugbreak(); 
+#endif	
 			for (auto obj : AllObjects)
 			{
 				kigsprintf("leaked %s\n", typeid(obj).name());
@@ -350,7 +352,9 @@ void KigsCore::Close(bool closeMemoryManager)
 			if (!test.insert({ id, s }).second)
 			{
 				auto val = test[id];
+#ifdef WIN32			
 				__debugbreak();
+#endif
 			}
 		}
 #endif
