@@ -119,13 +119,13 @@ bool	KigsCore::UnDecorateInstance(CoreModifiable* cm, KigsID decoratorName)
 	return false;
 }
 
-void	KigsCore::addAsyncRequest(AsyncRequest* toAdd)
+void	KigsCore::addAsyncRequest(SP<AsyncRequest> toAdd)
 {
 	if (!mCoreInstance->mAsyncRequestList)
 	{
 		mCoreInstance->mAsyncRequestList = new kstl::vector<SP<AsyncRequest>>;
 	}
-	mCoreInstance->mAsyncRequestList->push_back(toAdd->SharedFromThis());
+	mCoreInstance->mAsyncRequestList->push_back(toAdd);
 }
 
 void KigsCore::ManageAsyncRequests()
