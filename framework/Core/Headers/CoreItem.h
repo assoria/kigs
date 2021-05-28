@@ -83,6 +83,16 @@ public:
 	operator v3f() const;
 	operator v4f() const;
 
+	template<typename T>
+	inline T value() const
+	{
+		if(get())
+		return (T)(*get());
+
+		T noval(0);
+		return noval;
+	}
+
 	CoreItemIterator begin() const;
 	CoreItemIterator end() const;
 };
@@ -605,5 +615,24 @@ inline CoreItemIterator CoreItemSP::end() const
 	return get()->end();
 }
 
+template<>
+inline std::string CoreItemSP::value<std::string>() const
+{
+	if (get())
+		return (std::string)(*get());
+
+	std::string noval = "";
+	return noval;
+}
+
+template<>
+inline usString CoreItemSP::value<usString>() const
+{
+	if (get())
+		return (usString)(*get());
+
+	usString noval("");
+	return noval;
+}
 
 #endif // _COREITEM_H
