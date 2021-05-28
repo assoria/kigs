@@ -1737,7 +1737,7 @@ void CoreModifiable::Upgrade(const std::string& toAdd)
 		Upgrade(newone);
 }
 
-void CoreModifiable::Downgrade(const std::string& toRemove)
+void CoreModifiable::Downgrade(const KigsID& toRemove)
 {
 	auto lz = mLazyContent.load();
 	if (!lz)

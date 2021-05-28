@@ -1,7 +1,7 @@
 #include "CoreFSM.h"
 #include "Core.h"
 #include "CoreBaseApplication.h"
-#include "CoreFSMTransition.h"
+#include "CoreFSMState.h"
 
 IMPLEMENT_CLASS_INFO(CoreFSM)
 
@@ -20,16 +20,68 @@ void CoreFSM::Update(const Timer& timer, void* addParam)
 	{
 		return;
 	}
+	u32 specialOrder = 0;
+	CoreFSMStateBase* nextState = mCurrentState.back()->Update(mAttachedObject, this,specialOrder);
 
+	if (specialOrder == (u32)FSMStateSpecialOrder::POP_TRANSITION)
+	{
+		// TODO mCurrentState.back()->endState();
+		popCurrentState();
+		return;
+	}
+	if (nextState)
+	{
+		// TODO mCurrentState.back()->endState();
+		if (specialOrder == (u32)FSMStateSpecialOrder::PUSH_TRANSITION)
+		{
+			pushCurrentState(nextState);
+		}
+		else
+		{
+			changeCurrentState(nextState);
+		}
+	}
 
+}
 
+void	CoreFSM::changeCurrentState(CoreFSMStateBase* newone)
+{
+	if (mCurrentState.size())
+	{
+		mAttachedObject->Downgrade(mCurrentState.back()->getID());
+		mCurrentState.back() = newone;
+		mAttachedObject->Upgrade(dynamic_cast<UpgradorBase*>(newone));
+	}
+}
+
+void	CoreFSM::pushCurrentState(CoreFSMStateBase* newone)
+{
+	if (mCurrentState.size())
+	{
+		mAttachedObject->Downgrade(mCurrentState.back()->getID());
+	}
+	mCurrentState.push_back(newone);
+	mAttachedObject->Upgrade(dynamic_cast<UpgradorBase*>(newone));
+
+}
+void	CoreFSM::popCurrentState()
+{
+	if (mCurrentState.size())
+	{
+		mAttachedObject->Downgrade(mCurrentState.back()->getID());
+		mCurrentState.pop_back();
+	}
+	if (mCurrentState.size())
+	{
+		mAttachedObject->Upgrade(dynamic_cast<UpgradorBase*>(mCurrentState.back()));
+	}
 }
 
 void	CoreFSM::setStartState(const KigsID& id)
 {
 	if (mPossibleStates.find(id) != mPossibleStates.end())
 	{
-		changeCurrentState(mPossibleStates[id]);
+		pushCurrentState(mPossibleStates[id]);
 	}
 	else
 	{
@@ -37,8 +89,14 @@ void	CoreFSM::setStartState(const KigsID& id)
 	}
 }
 
-void	CoreFSM::addState(const KigsID& id, UpgradorBase* base)
+void	CoreFSM::addState(const KigsID& id, CoreFSMStateBase* base)
 {
+	if (IsInit())
+	{
+		KIGS_ERROR("try to add states on an initialized FSM", 2);
+		return;
+	}
+
 	if (mPossibleStates.find(id) != mPossibleStates.end()) // already there ?
 	{
 
@@ -50,7 +108,7 @@ void	CoreFSM::InitModifiable()
 	ParentClassType::InitModifiable();
 	if (IsInit())
 	{
-		if (GetParents().size()) // can't init without parent
+		if (GetParents().size() || (mCurrentState.size()==0)) // can't init without parent or start state
 		{
 			mAttachedObject = GetParents()[0];
 		}

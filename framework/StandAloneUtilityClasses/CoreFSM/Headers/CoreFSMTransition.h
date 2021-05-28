@@ -1,6 +1,9 @@
+#pragma once
 #include "CoreModifiable.h"
-#include "Upgrador.h"
-#include "CoreFSM.h"
+
+class CoreFSM;
+class CoreFSMStateBase;
+
 
 class CoreFSMTransition : public CoreModifiable
 {
@@ -8,18 +11,17 @@ public:
 	DECLARE_ABSTRACT_CLASS_INFO(CoreFSMTransition, CoreModifiable, CoreFSM);
 	DECLARE_CONSTRUCTOR(CoreFSMTransition);
 
-
 	friend class CoreFSM;
-
+	friend class CoreFSMStateBase;
 
 protected:
-	void	setState(UpgradorBase* gotoState)
+	void	setState(CoreFSMStateBase* gotoState)
 	{
 		mGotoState = gotoState;
 	}
-	virtual UpgradorBase* checkTransition(CoreModifiable* currentParentClass, CoreFSM* currentFSM) = 0;
+	virtual CoreFSMStateBase* checkTransition(CoreModifiable* currentParentClass, CoreFSM* currentFSM,u32& specialOrder) = 0;
 
-	UpgradorBase*	mGotoState;
+	CoreFSMStateBase*	mGotoState;
 };
 
 class CoreFSMOnSignalTransition : public CoreFSMTransition
@@ -28,7 +30,7 @@ public:
 	DECLARE_CLASS_INFO(CoreFSMOnSignalTransition, CoreFSMTransition, CoreFSM);
 	DECLARE_CONSTRUCTOR(CoreFSMOnSignalTransition);
 
-	UpgradorBase* checkTransition(CoreModifiable* currentParentClass, CoreFSM* currentFSM) override
+	CoreFSMStateBase* checkTransition(CoreModifiable* currentParentClass, CoreFSM* currentFSM, u32& specialOrder) override
 	{
 		if (mSignalReceived)
 		{

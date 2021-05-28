@@ -1090,7 +1090,9 @@ public:
 
 	// upgrador management
 	void Upgrade(const std::string& toAdd);
-	void Downgrade(const std::string& toRemove);
+	// upgrador management
+	void Upgrade(UpgradorBase* toAdd);
+	void Downgrade(const KigsID& toRemove);
 	// insert forward ptr
 	LazyContentLinkedListItemStruct InsertForwardPtr(StructLinkedListBase* address);
 
@@ -1106,8 +1108,6 @@ protected:
 	bool SimpleCallWithCoreItemParams(KigsID methodNameID, const CoreItemSP& params);
 
 
-	// protected upgrador management
-	void Upgrade(UpgradorBase* toAdd);
 
 	void Connect(KigsID signal, CMSP other, KigsID slot CONNECT_PARAM_DEFAULT);
 	void Disconnect(KigsID signal, const CMSP& other, KigsID slot);
