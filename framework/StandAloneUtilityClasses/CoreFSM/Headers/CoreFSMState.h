@@ -10,11 +10,16 @@ class CoreFSMStateBase
 {
 public:
 
-	virtual CoreFSMStateBase* Update(CoreModifiable* currentParentClass, CoreFSM* currentFSM, u32& specialOrder);
+	virtual bool Update(CoreModifiable* currentParentClass, u32& specialOrder, KigsID& newstate);
 
 	const KigsID&	getID()
 	{
 		return dynamic_cast<UpgradorBase*>(this)->getID();
+	}
+
+	void	AddTransition(SP<CoreFSMTransition> t)
+	{
+		mTransitions.push_back(t);
 	}
 
 protected:

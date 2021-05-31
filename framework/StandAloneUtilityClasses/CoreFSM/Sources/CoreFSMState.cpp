@@ -1,16 +1,18 @@
 #include "CoreFSMState.h"
 
 
-CoreFSMStateBase* CoreFSMStateBase::Update(CoreModifiable* currentParentClass, CoreFSM* currentFSM, u32& specialOrder)
+bool CoreFSMStateBase::Update(CoreModifiable* currentParentClass, u32& specialOrder, KigsID& stateID)
 {
 	CoreFSMStateBase* found=nullptr;
 	for (auto t : mTransitions)
 	{
-		found = t->checkTransition(currentParentClass, currentFSM, specialOrder);
-		if (found)
+		if(t->checkTransition(currentParentClass))
 		{
-			return found;
+			stateID = t->getState();
+			specialOrder = t->getValue<u32>("TransitionBehavior");
+
+			return true;
 		}
 	}
-	return nullptr;
+	return false;
 }

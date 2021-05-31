@@ -72,7 +72,17 @@ public:
 	double GetDt(CoreModifiable* caller);
 	//! reset elapsed time for this caller
 	void ResetDt(CoreModifiable* caller);
-	
+	//! remove this caller from dt map
+	void RemoveDt(CoreModifiable* caller);
+
+
+	//! get elapsed time since the first time this method was called for the given caller
+	double GetDelay(CoreModifiable* caller);
+	//! reset elapsed time for this caller
+	void ResetDelay(CoreModifiable* caller);
+	//! remove this caller from delay map
+	void RemoveDelay(CoreModifiable* caller);
+
 	//! sleep this thread for given ms
 	void Sleep(unsigned int ms);
 
@@ -86,7 +96,8 @@ protected:
 	void StartPause();
 	void EndPause();
 
- 	std::map<CoreModifiable*, double> mTimerMap;
+ 	std::unordered_map<CoreModifiable*, double> mTimerDtMap;
+	std::unordered_map<CoreModifiable*, double> mTimerDelayMap;
 
 	//! Time coremodifiable attribute
 	maComputedNumeric<double>	mTime;

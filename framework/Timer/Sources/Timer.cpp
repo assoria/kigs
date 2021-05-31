@@ -149,26 +149,60 @@ double Timer::GetDt(CoreModifiable* caller)
 		return (0.0);
 	}
 	double current = GetTime();
+	double dt = 0.0;
+	if (mTimerDtMap.find(caller) != mTimerDtMap.end())
+	{
+		dt = current - mTimerDtMap[caller];
+	}
+	mTimerDtMap[caller] = current;
+	return dt;
 
-	if (mTimerMap.find(caller) != mTimerMap.end())
-	{
-		double dt = current - mTimerMap[caller];
-		mTimerMap[caller] = current;
-		return dt;
-	}
-	else
-	{
-		mTimerMap[caller] = current;
-		return (0.0);
-	}
 }
 
 void Timer::ResetDt(CoreModifiable* caller)
 {
-	auto It = mTimerMap.find(caller);
-	if (It != mTimerMap.end())
+	double current = GetTime();
+	mTimerDtMap[caller] = current;
+}
+
+
+void Timer::RemoveDt(CoreModifiable* caller)
+{
+	auto It = mTimerDtMap.find(caller);
+	if (It != mTimerDtMap.end())
 	{
-		mTimerMap.erase(It);
+		mTimerDtMap.erase(It);
+	}
+}
+
+//! get elapsed time since the first time this method was called for the given caller
+double Timer::GetDelay(CoreModifiable* caller)
+{
+	double current = GetTime();
+	double delay = 0.0;
+	if (mTimerDelayMap.find(caller) != mTimerDelayMap.end())
+	{
+		delay = current - mTimerDelayMap[caller];
+	}
+	else
+	{
+		mTimerDelayMap[caller] = current; // first call, delay is 0
+	}
+	
+	return delay;
+}
+//! reset elapsed time for this caller (set current time as start time)
+void Timer::ResetDelay(CoreModifiable* caller)
+{
+	mTimerDelayMap[caller] = GetTime(); // set current time as new start time
+}
+//! remove this caller from delay map
+void Timer::RemoveDelay(CoreModifiable* caller)
+{
+	auto It = mTimerDelayMap.find(caller);
+	if (It != mTimerDelayMap.end())
+	{
+		mTimerDelayMap.erase(It);
 	}
 }
 

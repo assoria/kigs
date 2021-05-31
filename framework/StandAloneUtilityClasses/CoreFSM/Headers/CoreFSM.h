@@ -23,6 +23,8 @@ public:
 	void	addState(const KigsID& id, CoreFSMStateBase* base);
 	void	setStartState(const KigsID& id);
 
+	CoreFSMStateBase* getState(const KigsID& id);
+
 	void	InitModifiable()override;
 
 	void Update(const Timer& timer, void* addParam) override;

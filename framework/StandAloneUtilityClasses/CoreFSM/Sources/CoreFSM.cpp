@@ -21,7 +21,9 @@ void CoreFSM::Update(const Timer& timer, void* addParam)
 		return;
 	}
 	u32 specialOrder = 0;
-	CoreFSMStateBase* nextState = mCurrentState.back()->Update(mAttachedObject, this,specialOrder);
+	KigsID stateID("");
+
+	bool transit=mCurrentState.back()->Update(mAttachedObject, specialOrder, stateID);
 
 	if (specialOrder == (u32)FSMStateSpecialOrder::POP_TRANSITION)
 	{
@@ -29,16 +31,16 @@ void CoreFSM::Update(const Timer& timer, void* addParam)
 		popCurrentState();
 		return;
 	}
-	if (nextState)
+	if (transit)
 	{
 		// TODO mCurrentState.back()->endState();
 		if (specialOrder == (u32)FSMStateSpecialOrder::PUSH_TRANSITION)
 		{
-			pushCurrentState(nextState);
+			pushCurrentState(getState(stateID));
 		}
 		else
 		{
-			changeCurrentState(nextState);
+			changeCurrentState(getState(stateID));
 		}
 	}
 
@@ -46,6 +48,11 @@ void CoreFSM::Update(const Timer& timer, void* addParam)
 
 void	CoreFSM::changeCurrentState(CoreFSMStateBase* newone)
 {
+	if (!IsInit()) // if not init, error
+	{
+		KIGS_ERROR("FSM change current state on not init FSM", 2);
+		return;
+	}
 	if (mCurrentState.size())
 	{
 		mAttachedObject->Downgrade(mCurrentState.back()->getID());
@@ -54,8 +61,23 @@ void	CoreFSM::changeCurrentState(CoreFSMStateBase* newone)
 	}
 }
 
+CoreFSMStateBase* CoreFSM::getState(const KigsID& id)
+{
+	if (mPossibleStates.find(id) != mPossibleStates.end())
+	{
+		return mPossibleStates[id];
+	}
+	return nullptr;
+}
+
+
 void	CoreFSM::pushCurrentState(CoreFSMStateBase* newone)
 {
+	if (!IsInit()) // if not init, error
+	{
+		KIGS_ERROR("FSM push current state on not init FSM", 2);
+		return;
+	}
 	if (mCurrentState.size())
 	{
 		mAttachedObject->Downgrade(mCurrentState.back()->getID());
@@ -66,6 +88,11 @@ void	CoreFSM::pushCurrentState(CoreFSMStateBase* newone)
 }
 void	CoreFSM::popCurrentState()
 {
+	if (!IsInit()) // if not init, error
+	{
+		KIGS_ERROR("FSM pop current state on not init FSM", 2);
+		return;
+	}
 	if (mCurrentState.size())
 	{
 		mAttachedObject->Downgrade(mCurrentState.back()->getID());
@@ -81,6 +108,10 @@ void	CoreFSM::setStartState(const KigsID& id)
 {
 	if (mPossibleStates.find(id) != mPossibleStates.end())
 	{
+		if (!IsInit()) // if not init, init
+		{
+			Init();
+		}
 		pushCurrentState(mPossibleStates[id]);
 	}
 	else
@@ -99,12 +130,21 @@ void	CoreFSM::addState(const KigsID& id, CoreFSMStateBase* base)
 
 	if (mPossibleStates.find(id) != mPossibleStates.end()) // already there ?
 	{
-
+		if (mPossibleStates[id] != base)
+		{
+			KIGS_ERROR("try to add an already existing state", 2);
+		}
+		return;
 	}
+	mPossibleStates[id] = base;
 }
 
 void	CoreFSM::InitModifiable()
 {
+	if (IsInit()) // already init
+	{
+		return;
+	}
 	ParentClassType::InitModifiable();
 	if (IsInit())
 	{
@@ -122,6 +162,12 @@ void	CoreFSM::InitModifiable()
 CoreFSM::~CoreFSM()
 {
 	KigsCore::GetCoreApplication()->RemoveAutoUpdate(this);
+
+	for (auto state : mPossibleStates)
+	{
+		delete state.second;
+	}
+
 }
 
 
@@ -129,4 +175,8 @@ void	initCoreFSM()
 {
 	DECLARE_FULL_CLASS_INFO(KigsCore::Instance(), CoreFSM, CoreFSM, CoreFSM);
 	DECLARE_FULL_CLASS_INFO(KigsCore::Instance(), CoreFSMOnSignalTransition, CoreFSMOnSignalTransition, CoreFSM);
+	DECLARE_FULL_CLASS_INFO(KigsCore::Instance(), CoreFSMOnEventTransition, CoreFSMOnEventTransition, CoreFSM);
+	DECLARE_FULL_CLASS_INFO(KigsCore::Instance(), CoreFSMDelayTransition, CoreFSMDelayTransition, CoreFSM);
+	DECLARE_FULL_CLASS_INFO(KigsCore::Instance(), CoreFSMOnValueTransition, CoreFSMOnValueTransition, CoreFSM);
+	DECLARE_FULL_CLASS_INFO(KigsCore::Instance(), CoreFSMOnMethodTransition, CoreFSMOnMethodTransition, CoreFSM);
 }
