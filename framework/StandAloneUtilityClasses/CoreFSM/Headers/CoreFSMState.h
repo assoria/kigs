@@ -22,6 +22,11 @@ public:
 		mTransitions.push_back(t);
 	}
 
+	virtual ~CoreFSMStateBase()
+	{
+		mTransitions.clear();
+	}
+
 protected:
 	bool mIsInit = false; 
 	bool mIsPersistent = false; 

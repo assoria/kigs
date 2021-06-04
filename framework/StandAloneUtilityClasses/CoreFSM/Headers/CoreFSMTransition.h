@@ -105,7 +105,7 @@ public:
 
 protected:
 
-	maDouble	mDelay = BASE_ATTRIBUTE("Delay", 1.0);
+	maDouble	mDelay = BASE_ATTRIBUTE(Delay, 1.0);
 
 };
 
@@ -122,7 +122,7 @@ public:
 
 protected:
 
-	maString	mValueName = BASE_ATTRIBUTE("ValueName", "");
+	maString	mValueName = BASE_ATTRIBUTE(ValueName, "");
 
 };
 
@@ -139,6 +139,6 @@ public:
 
 protected:
 
-	maString	mMethodName = BASE_ATTRIBUTE("MethodName", "");
+	maString	mMethodName = BASE_ATTRIBUTE(MethodName, "");
 
 };

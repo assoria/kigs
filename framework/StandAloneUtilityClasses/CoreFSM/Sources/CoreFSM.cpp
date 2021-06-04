@@ -163,6 +163,11 @@ CoreFSM::~CoreFSM()
 {
 	KigsCore::GetCoreApplication()->RemoveAutoUpdate(this);
 
+	while (mCurrentState.size())
+	{
+		popCurrentState();
+	}
+
 	for (auto state : mPossibleStates)
 	{
 		delete state.second;
