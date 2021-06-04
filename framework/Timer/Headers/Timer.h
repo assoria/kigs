@@ -69,7 +69,7 @@ public:
 	void GetDate(unsigned int& a_year, unsigned int& a_month, unsigned int& a_day, unsigned int& a_hour, unsigned int& a_min, unsigned int& a_sec) const;
 	
 	//! get elapsed time since this method was called for the given caller
-	double GetDt(CoreModifiable* caller);
+	double GetDt(CoreModifiable* caller) const;
 	//! reset elapsed time for this caller
 	void ResetDt(CoreModifiable* caller);
 	//! remove this caller from dt map
@@ -77,7 +77,7 @@ public:
 
 
 	//! get elapsed time since the first time this method was called for the given caller
-	double GetDelay(CoreModifiable* caller);
+	double GetDelay(CoreModifiable* caller) const;
 	//! reset elapsed time for this caller
 	void ResetDelay(CoreModifiable* caller);
 	//! remove this caller from delay map

@@ -142,7 +142,7 @@ void Timer::SetState(State newstate)
 	mCurrentState = newstate;
 }
 
-double Timer::GetDt(CoreModifiable* caller)
+double Timer::GetDt(CoreModifiable* caller) const
 {
 	if (mCurrentState == PAUSED)
 	{
@@ -150,11 +150,12 @@ double Timer::GetDt(CoreModifiable* caller)
 	}
 	double current = GetTime();
 	double dt = 0.0;
-	if (mTimerDtMap.find(caller) != mTimerDtMap.end())
+	auto found = mTimerDtMap.find(caller);
+	if (found != mTimerDtMap.end())
 	{
-		dt = current - mTimerDtMap[caller];
+		dt = current - (*found).second;
 	}
-	mTimerDtMap[caller] = current;
+	const_cast<Timer*>(this)->mTimerDtMap[caller] = current;
 	return dt;
 
 }
@@ -176,17 +177,20 @@ void Timer::RemoveDt(CoreModifiable* caller)
 }
 
 //! get elapsed time since the first time this method was called for the given caller
-double Timer::GetDelay(CoreModifiable* caller)
+double Timer::GetDelay(CoreModifiable* caller) const
 {
 	double current = GetTime();
 	double delay = 0.0;
-	if (mTimerDelayMap.find(caller) != mTimerDelayMap.end())
+
+	auto found = mTimerDelayMap.find(caller);
+
+	if (found != mTimerDelayMap.end())
 	{
-		delay = current - mTimerDelayMap[caller];
+		delay = current - (*found).second;
 	}
 	else
 	{
-		mTimerDelayMap[caller] = current; // first call, delay is 0
+		const_cast<Timer*>(this)->mTimerDelayMap[caller] = current; // first call, delay is 0
 	}
 	
 	return delay;
