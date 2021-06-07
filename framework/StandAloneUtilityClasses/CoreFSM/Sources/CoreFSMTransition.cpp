@@ -49,7 +49,7 @@ bool CoreFSMOnMethodTransition::checkTransition(CoreModifiable* currentParentCla
 		Init();
 	}
 
-	return currentParentClass->SimpleCall<bool>((std::string)mMethodName);
+	return currentParentClass->SimpleCall((std::string)mMethodName);
 
 }
 
