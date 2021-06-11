@@ -35,7 +35,7 @@ virtual void GetMethodTable(kstl::vector<std::pair<KigsID, CoreModifiable::Modif
 { \
  public:\
 	UpgradorType* GetUpgrador(){return (UpgradorType*)CoreModifiable::GetUpgrador();}\
-	void UpgradorUpdate(const Timer& timer, void* addParam) {;} \
+	void UpgradorUpdate(const Timer& timer, void* addParam);\
 };\
 public:\
 void	UpgradorUpdate(CoreModifiable* toUpdate, const Timer& timer, void* addParam) override\

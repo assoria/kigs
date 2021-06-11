@@ -17,9 +17,9 @@ CoreFSMTransition::CoreFSMTransition(const kstl::string& name, CLASS_NAME_TREE_A
 
 bool CoreFSMDelayTransition::checkTransition(CoreModifiable* currentParentClass)
 {
-	if (!IsInit())
+	if (!mIsRunning)
 	{
-		Init();
+		KIGS_ERROR("check a not started transition", 1);
 	}
 	
 	double delay = KigsCore::GetCoreApplication()->GetApplicationTimer()->GetDelay(this);
@@ -30,12 +30,26 @@ bool CoreFSMDelayTransition::checkTransition(CoreModifiable* currentParentClass)
 	return false;
 }
 
+double CoreFSMDelayTransition::getRemainingTime()
+{
+	double delay = KigsCore::GetCoreApplication()->GetApplicationTimer()->GetDelay(this);
+	return (mDelay - delay);
+}
+
+void	CoreFSMDelayTransition::start()
+{
+	ParentClassType::start();
+	KigsCore::GetCoreApplication()->GetApplicationTimer()->ResetDelay(this);
+}
+
+
+
 
 bool CoreFSMOnValueTransition::checkTransition(CoreModifiable* currentParentClass)
 {
-	if (!IsInit())
+	if (!mIsRunning)
 	{
-		Init();
+		KIGS_ERROR("check a not started transition", 1);
 	}
 
 	return currentParentClass->getValue<bool>((std::string)mValueName);
@@ -44,21 +58,27 @@ bool CoreFSMOnValueTransition::checkTransition(CoreModifiable* currentParentClas
 
 bool CoreFSMOnMethodTransition::checkTransition(CoreModifiable* currentParentClass)
 {
-	if (!IsInit())
+	if (!mIsRunning)
 	{
-		Init();
+		KIGS_ERROR("check a not started transition", 1);
 	}
 
 	return currentParentClass->SimpleCall((std::string)mMethodName);
 
 }
 
-void CoreFSMOnEventTransition::InitModifiable()
+void	CoreFSMOnEventTransition::start()
 {
-	if (IsInit())
+	if (mIsRunning)
 		return;
-
-	ParentClassType::InitModifiable();
+	ParentClassType::start();
 	KigsCore::GetNotificationCenter()->addObserver(this, "EventReceived", (std::string)mEventName);
-
+	mEventReceived = false;
 }
+void	CoreFSMOnEventTransition::stop()
+{
+	ParentClassType::stop();
+	KigsCore::GetNotificationCenter()->removeObserver(this);
+	mEventReceived = false;
+}
+

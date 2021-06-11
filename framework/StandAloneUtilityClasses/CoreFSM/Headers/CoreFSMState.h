@@ -10,6 +10,8 @@ class CoreFSMStateBase
 {
 public:
 
+	virtual void	start(CoreFSMStateBase* prevstate=0);
+	virtual void	stop(CoreFSMStateBase* nextstate = 0);
 	virtual bool Update(CoreModifiable* currentParentClass, u32& specialOrder, KigsID& newstate);
 
 	const KigsID&	getID()
@@ -27,7 +29,22 @@ public:
 		mTransitions.clear();
 	}
 
+	SP<CoreFSMTransition>	getTransition(const KigsID& transitionname)
+	{
+		for (auto t : mTransitions)
+		{
+			if (t->getNameID() == transitionname)
+			{
+				return t;
+			}
+		}
+		return nullptr;
+	}
+
 protected:
+
+
+
 	bool mIsInit = false; 
 	bool mIsPersistent = false; 
 	std::vector<SP<CoreFSMTransition>> mTransitions;

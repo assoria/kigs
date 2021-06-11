@@ -224,7 +224,7 @@ bool	SpriteSheetData::Init(const std::string& json, std::string& texturename)
 
 		if (L_Meta)
 		{
-			texturename = L_Meta["image"];
+			texturename = (std::string)L_Meta["image"];
 		}
 		mJSonFilename = json;
 		mSpriteResources->mTextureFilename = texturename;

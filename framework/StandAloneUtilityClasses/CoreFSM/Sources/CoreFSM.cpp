@@ -55,9 +55,12 @@ void	CoreFSM::changeCurrentState(CoreFSMStateBase* newone)
 	}
 	if (mCurrentState.size())
 	{
+		CoreFSMStateBase* prevone = mCurrentState.back();
+		prevone->stop(newone);
 		mAttachedObject->Downgrade(mCurrentState.back()->getID());
 		mCurrentState.back() = newone;
 		mAttachedObject->Upgrade(dynamic_cast<UpgradorBase*>(newone));
+		newone->start(prevone);
 	}
 }
 
@@ -78,13 +81,16 @@ void	CoreFSM::pushCurrentState(CoreFSMStateBase* newone)
 		KIGS_ERROR("FSM push current state on not init FSM", 2);
 		return;
 	}
+	CoreFSMStateBase* prevone = nullptr;
 	if (mCurrentState.size())
 	{
+		prevone = mCurrentState.back();
+		prevone->stop(newone);
 		mAttachedObject->Downgrade(mCurrentState.back()->getID());
 	}
 	mCurrentState.push_back(newone);
 	mAttachedObject->Upgrade(dynamic_cast<UpgradorBase*>(newone));
-
+	newone->start(prevone);
 }
 void	CoreFSM::popCurrentState()
 {
@@ -93,14 +99,26 @@ void	CoreFSM::popCurrentState()
 		KIGS_ERROR("FSM pop current state on not init FSM", 2);
 		return;
 	}
+
+	CoreFSMStateBase* prevone = nullptr;
+	CoreFSMStateBase* newone = nullptr;
+
+	if (mCurrentState.size() > 1)
+	{
+		newone = mCurrentState[mCurrentState.size() - 2];
+	}
 	if (mCurrentState.size())
 	{
+		prevone = mCurrentState.back();
+		prevone->stop(newone);
+
 		mAttachedObject->Downgrade(mCurrentState.back()->getID());
 		mCurrentState.pop_back();
 	}
 	if (mCurrentState.size())
 	{
 		mAttachedObject->Upgrade(dynamic_cast<UpgradorBase*>(mCurrentState.back()));
+		newone->start(prevone);
 	}
 }
 

@@ -25,12 +25,23 @@ public:
 		return mGotoState;
 	}
 
+	virtual void	start()
+	{
+		mIsRunning = true;
+	}
+	virtual void	stop()
+	{
+		mIsRunning = false;
+	}
+
 protected:
 	virtual bool checkTransition(CoreModifiable* currentParentClass) = 0;
 
 	KigsID				mGotoState="";
 
 	maEnum<3>			mTransitionBehavior = BASE_ATTRIBUTE(TransitionBehavior, "Normal", "Pop", "Push");
+
+	bool				mIsRunning = false;
 };
 
 // TODO ?
@@ -45,12 +56,27 @@ public:
 
 	bool checkTransition(CoreModifiable* currentParentClass) override
 	{
+		if (!mIsRunning)
+		{
+			KIGS_ERROR("check a not started transition", 1);
+		}
 		if (mSignalReceived)
 		{
 			mSignalReceived = false;
 			return true;
 		}
 		return false;
+	}
+
+	void	start() override
+	{
+		ParentClassType::start();
+		mSignalReceived = false;
+	}
+	void	stop() override
+	{
+		ParentClassType::stop();
+		mSignalReceived = false;
 	}
 
 protected:
@@ -69,6 +95,10 @@ public:
 
 	bool checkTransition(CoreModifiable* currentParentClass) override
 	{
+		if (!mIsRunning)
+		{
+			KIGS_ERROR("check a not started transition", 1);
+		}
 		if (mEventReceived)
 		{
 			mEventReceived = false;
@@ -77,7 +107,8 @@ public:
 		return false;
 	}
 
-	virtual void InitModifiable() override;
+	virtual void	start() override;
+	virtual void	stop() override;
 
 	void	EventReceived()
 	{
@@ -102,6 +133,9 @@ public:
 	}
 
 	bool checkTransition(CoreModifiable* currentParentClass) override;
+	double getRemainingTime();
+
+	virtual void	start() override;
 
 protected:
 
