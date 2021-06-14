@@ -17,7 +17,7 @@ bool CoreFSMStateBase::Update(CoreModifiable* currentParentClass, u32& specialOr
 	return false;
 }
 
-void	CoreFSMStateBase::start(CoreFSMStateBase* prevstate)
+void	CoreFSMStateBase::start(CoreModifiable* currentParentClass, CoreFSMStateBase* prevstate)
 {
 	// start all transitions
 	for (auto t : mTransitions)
@@ -25,7 +25,7 @@ void	CoreFSMStateBase::start(CoreFSMStateBase* prevstate)
 		t->start();
 	}
 }
-void	CoreFSMStateBase::stop(CoreFSMStateBase* nextstate)
+void	CoreFSMStateBase::stop(CoreModifiable* currentParentClass, CoreFSMStateBase* nextstate)
 {
 	// stop all transitions
 	for (auto t : mTransitions)

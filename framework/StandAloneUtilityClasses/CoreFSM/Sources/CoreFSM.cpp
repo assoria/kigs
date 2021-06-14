@@ -56,11 +56,11 @@ void	CoreFSM::changeCurrentState(CoreFSMStateBase* newone)
 	if (mCurrentState.size())
 	{
 		CoreFSMStateBase* prevone = mCurrentState.back();
-		prevone->stop(newone);
+		prevone->stop(mAttachedObject,newone);
 		mAttachedObject->Downgrade(mCurrentState.back()->getID());
 		mCurrentState.back() = newone;
 		mAttachedObject->Upgrade(dynamic_cast<UpgradorBase*>(newone));
-		newone->start(prevone);
+		newone->start(mAttachedObject,prevone);
 	}
 }
 
@@ -85,12 +85,12 @@ void	CoreFSM::pushCurrentState(CoreFSMStateBase* newone)
 	if (mCurrentState.size())
 	{
 		prevone = mCurrentState.back();
-		prevone->stop(newone);
+		prevone->stop(mAttachedObject,newone);
 		mAttachedObject->Downgrade(mCurrentState.back()->getID());
 	}
 	mCurrentState.push_back(newone);
 	mAttachedObject->Upgrade(dynamic_cast<UpgradorBase*>(newone));
-	newone->start(prevone);
+	newone->start(mAttachedObject,prevone);
 }
 void	CoreFSM::popCurrentState()
 {
@@ -110,7 +110,7 @@ void	CoreFSM::popCurrentState()
 	if (mCurrentState.size())
 	{
 		prevone = mCurrentState.back();
-		prevone->stop(newone);
+		prevone->stop(mAttachedObject,newone);
 
 		mAttachedObject->Downgrade(mCurrentState.back()->getID());
 		mCurrentState.pop_back();
@@ -118,7 +118,7 @@ void	CoreFSM::popCurrentState()
 	if (mCurrentState.size())
 	{
 		mAttachedObject->Upgrade(dynamic_cast<UpgradorBase*>(mCurrentState.back()));
-		newone->start(prevone);
+		newone->start(mAttachedObject,prevone);
 	}
 }
 
