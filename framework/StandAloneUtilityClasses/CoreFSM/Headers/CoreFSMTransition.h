@@ -6,7 +6,17 @@
 class CoreFSM;
 class CoreFSMStateBase;
 
-
+// ****************************************
+// * CoreFSMTransition class
+// * --------------------------------------
+/**
+ * \class	CoreFSMTransition
+ * \file	CoreFSMTransition.h
+ * \ingroup CoreFSM
+ * \brief	FSM transition base class.
+ *
+ */
+ // ****************************************
 class CoreFSMTransition : public CoreModifiable
 {
 public:

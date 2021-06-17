@@ -5,6 +5,18 @@
 
 class CoreFSM;
 
+// ****************************************
+// * CoreFSMStateBase class
+// * --------------------------------------
+/**
+ * \class	CoreFSMStateBase
+ * \file	CoreFSMState.h
+ * \ingroup CoreFSM
+ * \brief	FSM state base class.
+ *
+ */
+ // ****************************************
+
 // base class for state, multiple inheritance
 class CoreFSMStateBase
 {
@@ -12,14 +24,14 @@ public:
 
 	virtual void	start(CoreModifiable* currentParentClass, CoreFSMStateBase* prevstate);
 	virtual void	stop(CoreModifiable* currentParentClass, CoreFSMStateBase* nextstate);
-	virtual bool	Update(CoreModifiable* currentParentClass, u32& specialOrder, KigsID& newstate);
+	virtual bool	update(CoreModifiable* currentParentClass, u32& specialOrder, KigsID& newstate);
 
 	const KigsID&	getID()
 	{
 		return dynamic_cast<UpgradorBase*>(this)->getID();
 	}
 
-	void	AddTransition(SP<CoreFSMTransition> t)
+	void	addTransition(SP<CoreFSMTransition> t)
 	{
 		mTransitions.push_back(t);
 	}
@@ -29,6 +41,7 @@ public:
 		mTransitions.clear();
 	}
 
+	// get a transition from the list given it's id
 	SP<CoreFSMTransition>	getTransition(const KigsID& transitionname)
 	{
 		for (auto t : mTransitions)
@@ -43,20 +56,79 @@ public:
 
 protected:
 
-	bool mIsInit = false; 
-	bool mIsPersistent = false; 
+	// transition list for this state
 	std::vector<SP<CoreFSMTransition>> mTransitions;
 
 };
+
+#define StringifyClassName(a) #a
+
+// Utility macro to declare states
+// a state declaration with no additionnal method will look like 
+
+/*
+
+  START_DECLARE_COREFSMSTATE(Ghost, Appear)  // state for the Ghost class named Appear
+  COREFSMSTATE_WITHOUT_METHODS()			 // this state has no specific method
+  END_DECLARE_COREFSMSTATE()				 // end of state declaration
+  
+*/
+
+// a state declaration with an additionnal checkDead method and a variable member will look like 
+
+/*
+
+   START_DECLARE_COREFSMSTATE(Ghost, Hunted) // state for the Ghost class named Hunted
+   v2i	mPacmanSeenPos;
+   COREFSMSTATE_METHODS(checkDead)
+   END_DECLARE_COREFSMSTATE()
+
+*/
+
+// then state Hunted definition will look like
+
+/*
+void	CoreFSMStartMethod(Ghost, Hunted)
+{
+	// start state code here
+	// this is an instance of Ghost here
+	...
+}
+void	CoreFSMStopMethod(Ghost, Hunted)
+{
+	// stop state code here
+	// this is an instance of Ghost here
+	...
+}
+
+// checkDead method
+DEFINE_UPGRADOR_METHOD(CoreFSMStateClass(Ghost, Hunted), checkDead)
+{
+	// this is an instance of Ghost here
+	if(mIsDead)
+		return true;
+
+	return false;
+}
+
+DEFINE_UPGRADOR_UPDATE(CoreFSMStateClass(Ghost, Hunted))
+{
+	// this is an instance of Ghost here
+
+	// retrieve variable in current state : 
+	v2i pacmanLastPos=GetUpgrador()->mPacmanSeenPos;
+	...
+}
+
+*/
 
 #define CoreFSMStateClass(baseclassname,statename)  CoreFSMState##baseclassname##statename
 
 #define CoreFSMStartMethod(baseclassname,statename)  CoreFSMState##baseclassname##statename::UpgradorMethods::start(class CoreFSMStateBase*)
 #define CoreFSMStopMethod(baseclassname,statename)  CoreFSMState##baseclassname##statename::UpgradorMethods::stop(class CoreFSMStateBase*)
 
-#define StringifyClassName(a) #a
-
 #define CoreFSMStateClassName(baseclassname,statename)  StringifyClassName(CoreFSMState##baseclassname##statename)
+
 
 #define START_DECLARE_COREFSMSTATE(baseclassname,statename) \
 class 	CoreFSMState##baseclassname##statename : public Upgrador<baseclassname>,public CoreFSMStateBase \
