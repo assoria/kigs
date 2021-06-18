@@ -15,6 +15,30 @@ CoreFSMTransition::CoreFSMTransition(const kstl::string& name, CLASS_NAME_TREE_A
 }
 
 
+void	CoreFSMOnSignalTransition::start()
+{
+	ParentClassType::start();
+	mSignalReceived = false;
+
+	CMSP toConnect = mConnectedClass;
+	if (toConnect && ((std::string)mSignal != ""))
+	{
+		Connect((std::string)mSignal, toConnect, "receiveSignal");
+	}
+	
+}
+void	CoreFSMOnSignalTransition::stop()
+{
+	CMSP toConnect = mConnectedClass;
+	if (toConnect && ((std::string)mSignal != ""))
+	{
+		Disconnect((std::string)mSignal, toConnect, "receiveSignal");
+	}
+
+	ParentClassType::stop();
+	mSignalReceived = false;
+}
+
 bool CoreFSMDelayTransition::checkTransition(CoreModifiable* currentParentClass)
 {
 	if (!mIsRunning)
