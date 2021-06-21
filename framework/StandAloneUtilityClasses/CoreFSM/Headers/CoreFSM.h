@@ -6,6 +6,15 @@
 void	initCoreFSM();
 
 
+#ifdef _DEBUG
+// keep track of state changes
+#define DEBUG_COREFSM	 
+#endif
+
+#ifdef DEBUG_COREFSM
+#include "CoreRawBuffer.h"
+#endif
+
 class CoreFSMStateBase;
 
 
@@ -71,4 +80,19 @@ protected:
 
 	//! map of possible states for this FSM 
 	std::unordered_map<KigsID, CoreFSMStateBase*>	mPossibleStates;
+
+#ifdef DEBUG_COREFSM
+
+	struct trackStateChange
+	{
+		double					mTime;
+		FSMStateSpecialOrder	mCause;
+		CoreFSMStateBase*		mState;
+	};
+
+	CircularBuffer<trackStateChange>	mStateChangeBuffer;
+public:
+	void	dumpLastStates();
+
+#endif
 };

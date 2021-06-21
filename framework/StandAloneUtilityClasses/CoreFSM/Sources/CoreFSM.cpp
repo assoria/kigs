@@ -40,6 +40,10 @@ IMPLEMENT_CLASS_INFO(CoreFSM)
 CoreFSM::CoreFSM(const kstl::string& name, CLASS_NAME_TREE_ARG) : CoreModifiable(name, PASS_CLASS_NAME_TREE_ARG)
 {
 	KigsCore::GetCoreApplication()->AddAutoUpdate(this);
+
+#ifdef DEBUG_COREFSM
+	mStateChangeBuffer.init(100);
+#endif
 }
 
 void CoreFSM::Update(const Timer& timer, void* addParam) 
@@ -96,6 +100,38 @@ CoreFSMStateBase* CoreFSM::getState(const KigsID& id)
 	return nullptr;
 }
 
+#ifdef DEBUG_COREFSM
+void	CoreFSM::dumpLastStates()
+{
+	int bufsize = mStateChangeBuffer.size();
+	if (bufsize)
+	{
+		printf("last state changes : \n");
+
+		for (int todump = 0; todump < bufsize; todump++)
+		{
+			auto& current = mStateChangeBuffer[todump];
+
+			printf("At %lf ", current.mTime);
+			printf(" state %s ", current.mState->getID().toString().c_str());
+			switch (current.mCause)
+			{
+			case FSMStateSpecialOrder::NORMAL_TRANSITION:
+				printf(" was set \n");
+				break;
+			case FSMStateSpecialOrder::PUSH_TRANSITION:
+				printf(" was pushed \n");
+				break;
+			case FSMStateSpecialOrder::POP_TRANSITION:
+				printf(" was set after previous set was pop \n");
+				break;
+			}
+
+		}
+	}
+}
+#endif
+
 // change the state on the stack by the given state
 void	CoreFSM::changeCurrentState(CoreFSMStateBase* newone)
 {
@@ -112,6 +148,9 @@ void	CoreFSM::changeCurrentState(CoreFSMStateBase* newone)
 		mAttachedObject->Upgrade(dynamic_cast<UpgradorBase*>(newone));
 		// start new state
 		newone->start(mAttachedObject,prevone);
+#ifdef DEBUG_COREFSM
+		mStateChangeBuffer.push_back({ KigsCore::GetCoreApplication()->GetApplicationTimer()->GetTime(),FSMStateSpecialOrder::NORMAL_TRANSITION ,newone });
+#endif
 	}
 }
 
@@ -127,6 +166,10 @@ void	CoreFSM::pushCurrentState(CoreFSMStateBase* newone)
 		// downgrade object from previous state
 		mAttachedObject->Downgrade(mCurrentState.back()->getID());
 	}
+
+#ifdef DEBUG_COREFSM
+	mStateChangeBuffer.push_back({ KigsCore::GetCoreApplication()->GetApplicationTimer()->GetTime(),FSMStateSpecialOrder::PUSH_TRANSITION ,newone });
+#endif
 	// push state
 	mCurrentState.push_back(newone);
 	// upgrade object with new current state
@@ -154,6 +197,10 @@ void	CoreFSM::popCurrentState()
 		// and pop the state
 		mCurrentState.pop_back();
 	}
+
+#ifdef DEBUG_COREFSM
+	mStateChangeBuffer.push_back({KigsCore::GetCoreApplication()->GetApplicationTimer()->GetTime(),FSMStateSpecialOrder::POP_TRANSITION ,newone });
+#endif
 
 	if (newone)
 	{

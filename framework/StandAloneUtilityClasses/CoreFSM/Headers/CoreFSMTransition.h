@@ -178,6 +178,7 @@ public:
 
 	bool checkTransition(CoreModifiable* currentParentClass) override;
 	double getRemainingTime();
+	double getElapsedTime();
 
 	virtual void	start() override;
 

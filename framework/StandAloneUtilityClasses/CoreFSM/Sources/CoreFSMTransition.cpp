@@ -60,6 +60,12 @@ double CoreFSMDelayTransition::getRemainingTime()
 	return (mDelay - delay);
 }
 
+double  CoreFSMDelayTransition::getElapsedTime()
+{
+	double elapsed = KigsCore::GetCoreApplication()->GetApplicationTimer()->GetDelay(this);
+	return elapsed;
+}
+
 void	CoreFSMDelayTransition::start()
 {
 	ParentClassType::start();
